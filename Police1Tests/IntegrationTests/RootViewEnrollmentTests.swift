@@ -101,7 +101,7 @@ final class AuthManagerReconfigureTests: XCTestCase {
         )
 
         // First authenticate
-        await authManager.login(username: "officer@pd.local", password: "password123")
+        await authManager.login(username: "officer@pd.local", password: "test-password")
         XCTAssertTrue(authManager.isAuthenticated)
 
         // Now reconfigure
@@ -139,7 +139,7 @@ final class AuthManagerReconfigureTests: XCTestCase {
 
         // Should be able to initialize and login
         await authManager.initialize()
-        await authManager.login(username: "officer@pd.local", password: "password123")
+        await authManager.login(username: "officer@pd.local", password: "test-password")
 
         XCTAssertTrue(authManager.isAuthenticated)
     }

@@ -21,6 +21,8 @@
 		A1B2C3D40000009A /* EnrollmentViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000009B /* EnrollmentViewTests.swift */; };
 		A1B2C3D40000009C /* EnrollmentServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000009D /* EnrollmentServiceTests.swift */; };
 		A1B2C3D40000009E /* RootViewEnrollmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000009F /* RootViewEnrollmentTests.swift */; };
+		A1B2C3D4000000A0 /* LoginViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000A1 /* LoginViewTests.swift */; };
+		A1B2C3D4000000A2 /* MainTabViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000A3 /* MainTabViewTests.swift */; };
 		A1B2C3D400000080 /* AuthModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D400000081 /* AuthModels.swift */; };
 		A1B2C3D400000082 /* AuthProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D400000083 /* AuthProvider.swift */; };
 		A1B2C3D400000084 /* AuthConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D400000085 /* AuthConfig.swift */; };
@@ -61,6 +63,8 @@
 		A1B2C3D40000009B /* EnrollmentViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnrollmentViewTests.swift; sourceTree = "<group>"; };
 		A1B2C3D40000009D /* EnrollmentServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnrollmentServiceTests.swift; sourceTree = "<group>"; };
 		A1B2C3D40000009F /* RootViewEnrollmentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootViewEnrollmentTests.swift; sourceTree = "<group>"; };
+		A1B2C3D4000000A1 /* LoginViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewTests.swift; sourceTree = "<group>"; };
+		A1B2C3D4000000A3 /* MainTabViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabViewTests.swift; sourceTree = "<group>"; };
 		A1B2C3D400000041 /* Police1Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Police1Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1B2C3D400000081 /* AuthModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthModels.swift; sourceTree = "<group>"; };
 		A1B2C3D400000083 /* AuthProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthProvider.swift; sourceTree = "<group>"; };
@@ -196,6 +200,8 @@
 				A1B2C3D40000009B /* EnrollmentViewTests.swift */,
 				A1B2C3D40000009D /* EnrollmentServiceTests.swift */,
 				A1B2C3D40000009F /* RootViewEnrollmentTests.swift */,
+				A1B2C3D4000000A1 /* LoginViewTests.swift */,
+				A1B2C3D4000000A3 /* MainTabViewTests.swift */,
 			);
 			path = IntegrationTests;
 			sourceTree = "<group>";
@@ -337,6 +343,8 @@
 				A1B2C3D40000009A /* EnrollmentViewTests.swift in Sources */,
 				A1B2C3D40000009C /* EnrollmentServiceTests.swift in Sources */,
 				A1B2C3D40000009E /* RootViewEnrollmentTests.swift in Sources */,
+				A1B2C3D4000000A0 /* LoginViewTests.swift in Sources */,
+				A1B2C3D4000000A2 /* MainTabViewTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

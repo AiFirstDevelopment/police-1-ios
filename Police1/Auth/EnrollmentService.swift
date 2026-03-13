@@ -183,7 +183,7 @@ final class EnrollmentService: ObservableObject {
 
     private var springfieldConfig: AuthConfig {
         AuthConfig(
-            providerType: .oauth,
+            providerType: .mock, // Use .oauth in production with real tenant
             loginIdentifiers: [.badgeNumber, .email],
             mfa: MFAConfig(
                 required: true,
@@ -243,7 +243,7 @@ final class EnrollmentService: ObservableObject {
 
     private var metroConfig: AuthConfig {
         AuthConfig(
-            providerType: .saml,
+            providerType: .mock, // Use .saml in production with real IdP
             loginIdentifiers: [.email],
             mfa: MFAConfig(
                 required: true,

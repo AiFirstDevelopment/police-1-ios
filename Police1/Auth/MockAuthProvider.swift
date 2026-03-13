@@ -18,25 +18,25 @@ final class MockAuthProvider: AuthProvider {
 
     // Test accounts by various identifier types
     private let testAccountsByEmail: [String: String] = [
-        "officer@pd.local": "password123",
-        "admin@pd.local": "admin123",
-        "test@test.com": "test"
+        "officer@pd.local": "test-password",
+        "admin@pd.local": "test-password",
+        "test@test.com": "test-password"
     ]
 
     private let testAccountsByBadge: [String: (password: String, email: String)] = [
-        "12345": (password: "password123", email: "officer@pd.local"),
-        "99999": (password: "admin123", email: "admin@pd.local"),
-        "00001": (password: "test", email: "test@test.com")
+        "12345": (password: "test-password", email: "officer@pd.local"),
+        "99999": (password: "test-password", email: "admin@pd.local"),
+        "00001": (password: "test-password", email: "test@test.com")
     ]
 
     private let testAccountsByEmployeeId: [String: (password: String, email: String)] = [
-        "EMP-001": (password: "password123", email: "officer@pd.local"),
-        "EMP-999": (password: "admin123", email: "admin@pd.local")
+        "EMP-001": (password: "test-password", email: "officer@pd.local"),
+        "EMP-999": (password: "test-password", email: "admin@pd.local")
     ]
 
     private let testAccountsByPhone: [String: (password: String, email: String)] = [
-        "5551234567": (password: "password123", email: "officer@pd.local"),
-        "5559999999": (password: "admin123", email: "admin@pd.local")
+        "5551234567": (password: "test-password", email: "officer@pd.local"),
+        "5559999999": (password: "test-password", email: "admin@pd.local")
     ]
 
     func login(with credentials: AuthCredentials) async throws -> AuthSession {

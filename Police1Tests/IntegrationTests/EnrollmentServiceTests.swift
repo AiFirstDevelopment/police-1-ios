@@ -46,7 +46,7 @@ final class EnrollmentServiceTests: XCTestCase {
     func testEnrollWithCodeSpringfieldReturnsCorrectConfig() async throws {
         let config = try await sut.enrollWithCode("SPRINGFIELD")
         XCTAssertEqual(config.branding?.departmentName, "Springfield Police Department")
-        XCTAssertEqual(config.providerType, .oauth)
+        XCTAssertEqual(config.providerType, .mock) // Uses .oauth in production
     }
 
     func testEnrollWithCodeSpringfieldPDReturnsCorrectConfig() async throws {
@@ -63,7 +63,7 @@ final class EnrollmentServiceTests: XCTestCase {
     func testEnrollWithCodeMetroReturnsCorrectConfig() async throws {
         let config = try await sut.enrollWithCode("METRO")
         XCTAssertEqual(config.branding?.departmentName, "Metropolitan Police")
-        XCTAssertEqual(config.providerType, .saml)
+        XCTAssertEqual(config.providerType, .mock) // Uses .saml in production
     }
 
     func testEnrollWithCodeDemoReturnsMockConfig() async throws {

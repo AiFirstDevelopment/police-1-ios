@@ -269,9 +269,9 @@ struct LoginView: View {
         VStack(spacing: 4) {
             Text("Development Mode")
                 .font(.caption.weight(.medium))
-            Text("Use: officer@pd.local / password123")
+            Text("Use: officer@pd.local / test-password")
                 .font(.caption2)
-            Text("Or badge: 12345 / password123")
+            Text("Or badge: 12345 / test-password")
                 .font(.caption2)
         }
         .foregroundStyle(.white.opacity(0.6))
