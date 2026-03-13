@@ -33,10 +33,10 @@ final class MainTabViewTests: XCTestCase {
     }
 }
 
-// MARK: - HomeView Tests
+// MARK: - ActivityView Tests
 
 @MainActor
-final class HomeViewTests: XCTestCase {
+final class ActivityViewTests: XCTestCase {
 
     private func createAuthManager() -> AuthManager {
         let provider = MockAuthProvider()
@@ -48,49 +48,112 @@ final class HomeViewTests: XCTestCase {
         )
     }
 
-    func testHomeViewHasNavigationStack() throws {
+    func testActivityViewHasNavigationStack() throws {
         let authManager = createAuthManager()
-        let view = HomeView().environmentObject(authManager)
+        let view = ActivityView().environmentObject(authManager)
         let sut = try view.inspect()
 
         let nav = try sut.find(ViewType.NavigationStack.self)
         XCTAssertNotNil(nav)
     }
 
-    func testHomeViewHasZStack() throws {
+    func testActivityViewHasList() throws {
         let authManager = createAuthManager()
-        let view = HomeView().environmentObject(authManager)
+        let view = ActivityView().environmentObject(authManager)
         let sut = try view.inspect()
 
-        let zstack = try sut.find(ViewType.ZStack.self)
-        XCTAssertNotNil(zstack)
+        let list = try sut.find(ViewType.List.self)
+        XCTAssertNotNil(list)
     }
 
-    func testHomeViewHasGradient() throws {
+    func testActivityViewHasSections() throws {
         let authManager = createAuthManager()
-        let view = HomeView().environmentObject(authManager)
+        let view = ActivityView().environmentObject(authManager)
         let sut = try view.inspect()
 
-        let gradient = try sut.find(ViewType.LinearGradient.self)
-        XCTAssertNotNil(gradient)
+        let sections = sut.findAll(ViewType.Section.self)
+        XCTAssertGreaterThanOrEqual(sections.count, 2) // Today and Yesterday sections
     }
 
-    func testHomeViewHasVStack() throws {
+    func testActivityViewHasActivityRows() throws {
         let authManager = createAuthManager()
-        let view = HomeView().environmentObject(authManager)
+        let view = ActivityView().environmentObject(authManager)
+        let sut = try view.inspect()
+
+        // Activity rows contain HStacks with images and text
+        let hstacks = sut.findAll(ViewType.HStack.self)
+        XCTAssertGreaterThanOrEqual(hstacks.count, 4) // At least 4 activity items
+    }
+
+    func testActivityViewHasImages() throws {
+        let authManager = createAuthManager()
+        let view = ActivityView().environmentObject(authManager)
+        let sut = try view.inspect()
+
+        let images = sut.findAll(ViewType.Image.self)
+        XCTAssertGreaterThanOrEqual(images.count, 4) // Icons for each activity
+    }
+}
+
+// MARK: - ActivityRow Tests
+
+@MainActor
+final class ActivityRowTests: XCTestCase {
+
+    func testActivityRowHasHStack() throws {
+        let view = ActivityRow(
+            icon: "doc.text.fill",
+            title: "Test Title",
+            subtitle: "Test Subtitle",
+            time: "2 hours ago",
+            color: .blue
+        )
+        let sut = try view.inspect()
+
+        let hstack = try sut.find(ViewType.HStack.self)
+        XCTAssertNotNil(hstack)
+    }
+
+    func testActivityRowHasIcon() throws {
+        let view = ActivityRow(
+            icon: "doc.text.fill",
+            title: "Test Title",
+            subtitle: "Test Subtitle",
+            time: "2 hours ago",
+            color: .blue
+        )
+        let sut = try view.inspect()
+
+        let images = sut.findAll(ViewType.Image.self)
+        XCTAssertGreaterThanOrEqual(images.count, 1)
+    }
+
+    func testActivityRowHasTexts() throws {
+        let view = ActivityRow(
+            icon: "doc.text.fill",
+            title: "Test Title",
+            subtitle: "Test Subtitle",
+            time: "2 hours ago",
+            color: .blue
+        )
+        let sut = try view.inspect()
+
+        let texts = sut.findAll(ViewType.Text.self)
+        XCTAssertGreaterThanOrEqual(texts.count, 3) // title, subtitle, time
+    }
+
+    func testActivityRowHasVStack() throws {
+        let view = ActivityRow(
+            icon: "doc.text.fill",
+            title: "Test Title",
+            subtitle: "Test Subtitle",
+            time: "2 hours ago",
+            color: .blue
+        )
         let sut = try view.inspect()
 
         let vstack = try sut.find(ViewType.VStack.self)
         XCTAssertNotNil(vstack)
-    }
-
-    func testHomeViewHasTexts() throws {
-        let authManager = createAuthManager()
-        let view = HomeView().environmentObject(authManager)
-        let sut = try view.inspect()
-
-        let texts = sut.findAll(ViewType.Text.self)
-        XCTAssertGreaterThanOrEqual(texts.count, 1) // "Dashboard coming soon..."
     }
 }
 
@@ -202,5 +265,6 @@ final class AuthUserExtensionTests: XCTestCase {
 // MARK: - ViewInspector Extensions
 
 extension MainTabView: @retroactive Inspectable {}
-extension HomeView: @retroactive Inspectable {}
+extension ActivityView: @retroactive Inspectable {}
+extension ActivityRow: @retroactive Inspectable {}
 extension ProfileView: @retroactive Inspectable {}

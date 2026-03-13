@@ -8,9 +8,14 @@ struct MainTabView: View {
 
     var body: some View {
         TabView {
-            HomeView()
+            ReportsListView()
                 .tabItem {
-                    Label("Home", systemImage: "house.fill")
+                    Label("Reports", systemImage: "doc.text.fill")
+                }
+
+            ActivityView()
+                .tabItem {
+                    Label("Activity", systemImage: "clock.fill")
                 }
 
             ProfileView()
@@ -21,33 +26,87 @@ struct MainTabView: View {
     }
 }
 
-// MARK: - Home View
+// MARK: - Activity View
 
-struct HomeView: View {
+struct ActivityView: View {
     @EnvironmentObject var authManager: AuthManager
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                LinearGradient(
-                    colors: [Color.blue.opacity(0.1), Color.purple.opacity(0.1)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
+            List {
+                Section("Today") {
+                    ActivityRow(
+                        icon: "doc.text.fill",
+                        title: "Report submitted",
+                        subtitle: "Case #2026-45892 - Theft",
+                        time: "2 hours ago",
+                        color: .blue
+                    )
+                    ActivityRow(
+                        icon: "checkmark.circle.fill",
+                        title: "Report approved",
+                        subtitle: "Case #2026-45801 - Traffic Accident",
+                        time: "5 hours ago",
+                        color: .green
+                    )
+                }
 
-                VStack(spacing: 24) {
-                    if let user = authManager.currentUser {
-                        Text("Welcome, \(user.displayName)")
-                            .font(.title2.weight(.semibold))
-                    }
-
-                    Text("Dashboard coming soon...")
-                        .foregroundStyle(.secondary)
+                Section("Yesterday") {
+                    ActivityRow(
+                        icon: "pencil.circle.fill",
+                        title: "Report edited",
+                        subtitle: "Case #2026-45756 - Domestic Disturbance",
+                        time: "Yesterday at 3:45 PM",
+                        color: .orange
+                    )
+                    ActivityRow(
+                        icon: "arrow.triangle.2.circlepath",
+                        title: "Sync completed",
+                        subtitle: "3 reports synced",
+                        time: "Yesterday at 2:30 PM",
+                        color: .purple
+                    )
                 }
             }
-            .navigationTitle("Home")
+            .navigationTitle("Activity")
         }
+    }
+}
+
+// MARK: - Activity Row
+
+struct ActivityRow: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+    let time: String
+    let color: Color
+
+    var body: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.15))
+                    .frame(width: 40, height: 40)
+                Image(systemName: icon)
+                    .foregroundStyle(color)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.body.weight(.medium))
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            Text(time)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.vertical, 4)
     }
 }
 

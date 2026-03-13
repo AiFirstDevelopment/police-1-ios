@@ -35,6 +35,14 @@
 		A1B2C3D400000092 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D400000093 /* RootView.swift */; };
 		A1B2C3D400000096 /* EnrollmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D400000097 /* EnrollmentView.swift */; };
 		A1B2C3D400000098 /* EnrollmentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D400000099 /* EnrollmentService.swift */; };
+		A1B2C3D4000000B0 /* Report.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000B1 /* Report.swift */; };
+		A1B2C3D4000000B2 /* ReportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000B3 /* ReportService.swift */; };
+		A1B2C3D4000000B4 /* ReportsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000B5 /* ReportsListView.swift */; };
+		A1B2C3D4000000B6 /* ReportDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000B7 /* ReportDetailView.swift */; };
+		A1B2C3D4000000B8 /* ReportEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000B9 /* ReportEditorView.swift */; };
+		A1B2C3D4000000C2 /* ReportsViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000C3 /* ReportsViewTests.swift */; };
+		A1B2C3D4000000C4 /* ReportModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000C5 /* ReportModelTests.swift */; };
+		A1B2C3D4000000C6 /* ReportServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000C7 /* ReportServiceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -78,6 +86,14 @@
 		A1B2C3D400000093 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		A1B2C3D400000097 /* EnrollmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnrollmentView.swift; sourceTree = "<group>"; };
 		A1B2C3D400000099 /* EnrollmentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnrollmentService.swift; sourceTree = "<group>"; };
+		A1B2C3D4000000B1 /* Report.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Report.swift; sourceTree = "<group>"; };
+		A1B2C3D4000000B3 /* ReportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportService.swift; sourceTree = "<group>"; };
+		A1B2C3D4000000B5 /* ReportsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportsListView.swift; sourceTree = "<group>"; };
+		A1B2C3D4000000B7 /* ReportDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportDetailView.swift; sourceTree = "<group>"; };
+		A1B2C3D4000000B9 /* ReportEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportEditorView.swift; sourceTree = "<group>"; };
+		A1B2C3D4000000C3 /* ReportsViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportsViewTests.swift; sourceTree = "<group>"; };
+		A1B2C3D4000000C5 /* ReportModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportModelTests.swift; sourceTree = "<group>"; };
+		A1B2C3D4000000C7 /* ReportServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportServiceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -113,12 +129,21 @@
 				A1B2C3D400000002 /* Police1App.swift */,
 				A1B2C3D400000004 /* ContentView.swift */,
 				A1B2C3D400000094 /* Auth */,
+				A1B2C3D4000000C0 /* Models */,
 				A1B2C3D400000095 /* Views */,
 				A1B2C3D400000024 /* Services */,
 				A1B2C3D400000006 /* Assets.xcassets */,
 				A1B2C3D40000000E /* Preview Content */,
 			);
 			path = Police1;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4000000C0 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4000000B1 /* Report.swift */,
+			);
+			path = Models;
 			sourceTree = "<group>";
 		};
 		A1B2C3D400000094 /* Auth */ = {
@@ -143,8 +168,19 @@
 				A1B2C3D400000091 /* MainTabView.swift */,
 				A1B2C3D400000093 /* RootView.swift */,
 				A1B2C3D400000097 /* EnrollmentView.swift */,
+				A1B2C3D4000000C1 /* Reports */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4000000C1 /* Reports */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4000000B5 /* ReportsListView.swift */,
+				A1B2C3D4000000B7 /* ReportDetailView.swift */,
+				A1B2C3D4000000B9 /* ReportEditorView.swift */,
+			);
+			path = Reports;
 			sourceTree = "<group>";
 		};
 		A1B2C3D40000000D /* Products */ = {
@@ -169,6 +205,7 @@
 			children = (
 				A1B2C3D400000021 /* NetworkService.swift */,
 				A1B2C3D400000023 /* AppDependencies.swift */,
+				A1B2C3D4000000B3 /* ReportService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -202,6 +239,9 @@
 				A1B2C3D40000009F /* RootViewEnrollmentTests.swift */,
 				A1B2C3D4000000A1 /* LoginViewTests.swift */,
 				A1B2C3D4000000A3 /* MainTabViewTests.swift */,
+				A1B2C3D4000000C3 /* ReportsViewTests.swift */,
+				A1B2C3D4000000C5 /* ReportModelTests.swift */,
+				A1B2C3D4000000C7 /* ReportServiceTests.swift */,
 			);
 			path = IntegrationTests;
 			sourceTree = "<group>";
@@ -328,6 +368,11 @@
 				A1B2C3D400000092 /* RootView.swift in Sources */,
 				A1B2C3D400000096 /* EnrollmentView.swift in Sources */,
 				A1B2C3D400000098 /* EnrollmentService.swift in Sources */,
+				A1B2C3D4000000B0 /* Report.swift in Sources */,
+				A1B2C3D4000000B2 /* ReportService.swift in Sources */,
+				A1B2C3D4000000B4 /* ReportsListView.swift in Sources */,
+				A1B2C3D4000000B6 /* ReportDetailView.swift in Sources */,
+				A1B2C3D4000000B8 /* ReportEditorView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -345,6 +390,9 @@
 				A1B2C3D40000009E /* RootViewEnrollmentTests.swift in Sources */,
 				A1B2C3D4000000A0 /* LoginViewTests.swift in Sources */,
 				A1B2C3D4000000A2 /* MainTabViewTests.swift in Sources */,
+				A1B2C3D4000000C2 /* ReportsViewTests.swift in Sources */,
+				A1B2C3D4000000C4 /* ReportModelTests.swift in Sources */,
+				A1B2C3D4000000C6 /* ReportServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
