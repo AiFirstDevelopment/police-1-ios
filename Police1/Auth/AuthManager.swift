@@ -66,8 +66,10 @@ final class AuthManager: ObservableObject {
     func reconfigure(with newProvider: AuthProvider, config newConfig: AuthConfig) async {
         self.provider = newProvider
         self.config = newConfig
-        self.state = .unknown
+        self.state = .unauthenticated
         self.mfaPending = nil
+        // Clear any previous session when switching providers
+        sessionStorage.clear()
     }
 
     /// Initialize auth state by checking for existing session
