@@ -12,7 +12,8 @@ final class ReportModelTests: XCTestCase {
 
         XCTAssertNotNil(report.id)
         XCTAssertEqual(report.incidentType, .other)
-        XCTAssertEqual(report.caseNumber, "")
+        XCTAssertEqual(report.localCaseNumber, "")
+        XCTAssertNil(report.officialCaseNumber)
         XCTAssertEqual(report.location, "")
         XCTAssertEqual(report.summary, "")
         XCTAssertEqual(report.narrative, "")
@@ -30,7 +31,8 @@ final class ReportModelTests: XCTestCase {
         let report = Report(
             id: id,
             incidentType: .theft,
-            caseNumber: "2026-12345",
+            localCaseNumber: "DRAFT-12345",
+            officialCaseNumber: "2026-12345",
             incidentDate: date,
             location: "123 Main St",
             summary: "Test summary",
@@ -50,7 +52,8 @@ final class ReportModelTests: XCTestCase {
 
         XCTAssertEqual(report.id, id)
         XCTAssertEqual(report.incidentType, .theft)
-        XCTAssertEqual(report.caseNumber, "2026-12345")
+        XCTAssertEqual(report.localCaseNumber, "DRAFT-12345")
+        XCTAssertEqual(report.officialCaseNumber, "2026-12345")
         XCTAssertEqual(report.location, "123 Main St")
         XCTAssertEqual(report.status, .approved)
         XCTAssertEqual(report.syncStatus, .synced)
@@ -64,22 +67,60 @@ final class ReportModelTests: XCTestCase {
         let date = Date()
         let report1 = Report(
             id: id,
-            caseNumber: "2026-12345",
+            localCaseNumber: "DRAFT-12345",
             incidentDate: date,
             createdAt: date,
             updatedAt: date
         )
         let report2 = Report(
             id: id,
-            caseNumber: "2026-12345",
+            localCaseNumber: "DRAFT-12345",
             incidentDate: date,
             createdAt: date,
             updatedAt: date
         )
-        let report3 = Report(caseNumber: "2026-12345")
+        let report3 = Report(localCaseNumber: "DRAFT-12345")
 
         XCTAssertEqual(report1, report2)
         XCTAssertNotEqual(report1, report3)
+    }
+
+    // MARK: - Case Number Tests
+
+    func testDisplayCaseNumberShowsOfficialWhenAvailable() {
+        let report = Report(
+            localCaseNumber: "DRAFT-12345",
+            officialCaseNumber: "2026-12345"
+        )
+
+        XCTAssertEqual(report.displayCaseNumber, "2026-12345")
+    }
+
+    func testDisplayCaseNumberShowsLocalWhenNoOfficial() {
+        let report = Report(
+            localCaseNumber: "DRAFT-12345",
+            officialCaseNumber: nil
+        )
+
+        XCTAssertEqual(report.displayCaseNumber, "DRAFT-12345")
+    }
+
+    func testHasOfficialCaseNumberTrueWhenAssigned() {
+        let report = Report(
+            localCaseNumber: "DRAFT-12345",
+            officialCaseNumber: "2026-12345"
+        )
+
+        XCTAssertTrue(report.hasOfficialCaseNumber)
+    }
+
+    func testHasOfficialCaseNumberFalseWhenNotAssigned() {
+        let report = Report(
+            localCaseNumber: "DRAFT-12345",
+            officialCaseNumber: nil
+        )
+
+        XCTAssertFalse(report.hasOfficialCaseNumber)
     }
 
     // MARK: - IncidentType Tests

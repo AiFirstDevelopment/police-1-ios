@@ -5,7 +5,8 @@ import Foundation
 struct Report: Identifiable, Codable, Equatable {
     let id: UUID
     var incidentType: IncidentType
-    var caseNumber: String
+    var localCaseNumber: String      // Generated locally (e.g., "DRAFT-68691")
+    var officialCaseNumber: String?  // Assigned by server/RMS on sync
     var incidentDate: Date
     var location: String
     var summary: String
@@ -28,10 +29,21 @@ struct Report: Identifiable, Codable, Equatable {
     var officerName: String
     var badgeNumber: String
 
+    /// Returns the official case number if assigned, otherwise the local draft number
+    var displayCaseNumber: String {
+        officialCaseNumber ?? localCaseNumber
+    }
+
+    /// Whether this report has been assigned an official case number
+    var hasOfficialCaseNumber: Bool {
+        officialCaseNumber != nil
+    }
+
     init(
         id: UUID = UUID(),
         incidentType: IncidentType = .other,
-        caseNumber: String = "",
+        localCaseNumber: String = "",
+        officialCaseNumber: String? = nil,
         incidentDate: Date = Date(),
         location: String = "",
         summary: String = "",
@@ -50,7 +62,8 @@ struct Report: Identifiable, Codable, Equatable {
     ) {
         self.id = id
         self.incidentType = incidentType
-        self.caseNumber = caseNumber
+        self.localCaseNumber = localCaseNumber
+        self.officialCaseNumber = officialCaseNumber
         self.incidentDate = incidentDate
         self.location = location
         self.summary = summary

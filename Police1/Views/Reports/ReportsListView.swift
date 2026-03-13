@@ -160,7 +160,7 @@ struct ReportsListView: View {
         // Apply search filter
         if !searchText.isEmpty {
             reports = reports.filter { report in
-                report.caseNumber.localizedCaseInsensitiveContains(searchText) ||
+                report.displayCaseNumber.localizedCaseInsensitiveContains(searchText) ||
                 report.summary.localizedCaseInsensitiveContains(searchText) ||
                 report.location.localizedCaseInsensitiveContains(searchText) ||
                 report.incidentType.rawValue.localizedCaseInsensitiveContains(searchText)
@@ -252,9 +252,15 @@ struct ReportRowView: View {
                         .foregroundStyle(report.syncStatus == .synced ? .green : .orange)
                 }
 
-                Text(report.caseNumber)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 4) {
+                    Text(report.displayCaseNumber)
+                    if !report.hasOfficialCaseNumber {
+                        Text("(Pending)")
+                            .foregroundStyle(.orange)
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
 
                 if !report.summary.isEmpty {
                     Text(report.summary)

@@ -41,7 +41,7 @@ struct ReportDetailView: View {
             }
             .padding()
         }
-        .navigationTitle("Case \(report.caseNumber)")
+        .navigationTitle("Case \(report.displayCaseNumber)")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -91,9 +91,15 @@ struct ReportDetailView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(report.incidentType.rawValue)
                         .font(.title2.weight(.bold))
-                    Text(report.caseNumber)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                    HStack(spacing: 4) {
+                        Text(report.displayCaseNumber)
+                        if !report.hasOfficialCaseNumber {
+                            Text("(Pending)")
+                                .foregroundStyle(.orange)
+                        }
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
                 }
 
                 Spacer()

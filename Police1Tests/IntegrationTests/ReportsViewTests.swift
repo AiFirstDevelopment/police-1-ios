@@ -39,11 +39,12 @@ final class ReportsListViewTests: XCTestCase {
 @MainActor
 final class ReportRowViewTests: XCTestCase {
 
-    private func createMockReport() -> Report {
+    private func createMockReport(withOfficialCaseNumber: Bool = true) -> Report {
         Report(
             id: UUID(),
             incidentType: .theft,
-            caseNumber: "2026-12345",
+            localCaseNumber: "DRAFT-12345",
+            officialCaseNumber: withOfficialCaseNumber ? "2026-12345" : nil,
             incidentDate: Date(),
             location: "123 Main St",
             summary: "Test summary",
@@ -51,7 +52,7 @@ final class ReportRowViewTests: XCTestCase {
             status: .draft,
             createdAt: Date(),
             updatedAt: Date(),
-            syncStatus: .local,
+            syncStatus: withOfficialCaseNumber ? .synced : .local,
             subjects: [],
             victims: [],
             witnesses: [],
@@ -116,6 +117,46 @@ final class ReportRowViewTests: XCTestCase {
         // ZStack contains the circle icon background
         let zstacks = sut.findAll(ViewType.ZStack.self)
         XCTAssertGreaterThanOrEqual(zstacks.count, 1)
+    }
+
+    func testReportRowViewShowsPendingForDraftReport() throws {
+        let report = createMockReport(withOfficialCaseNumber: false)
+        let view = ReportRowView(report: report)
+        let sut = try view.inspect()
+
+        let texts = sut.findAll(ViewType.Text.self)
+        let pendingText = texts.first { (try? $0.string()) == "(Pending)" }
+        XCTAssertNotNil(pendingText, "Should show (Pending) for reports without official case number")
+    }
+
+    func testReportRowViewHidesPendingForSyncedReport() throws {
+        let report = createMockReport(withOfficialCaseNumber: true)
+        let view = ReportRowView(report: report)
+        let sut = try view.inspect()
+
+        let texts = sut.findAll(ViewType.Text.self)
+        let pendingText = texts.first { (try? $0.string()) == "(Pending)" }
+        XCTAssertNil(pendingText, "Should not show (Pending) for reports with official case number")
+    }
+
+    func testReportRowViewShowsDisplayCaseNumber() throws {
+        let report = createMockReport(withOfficialCaseNumber: true)
+        let view = ReportRowView(report: report)
+        let sut = try view.inspect()
+
+        let texts = sut.findAll(ViewType.Text.self)
+        let caseNumberText = texts.first { (try? $0.string()) == "2026-12345" }
+        XCTAssertNotNil(caseNumberText, "Should show official case number when available")
+    }
+
+    func testReportRowViewShowsDraftCaseNumberWhenNoOfficial() throws {
+        let report = createMockReport(withOfficialCaseNumber: false)
+        let view = ReportRowView(report: report)
+        let sut = try view.inspect()
+
+        let texts = sut.findAll(ViewType.Text.self)
+        let caseNumberText = texts.first { (try? $0.string()) == "DRAFT-12345" }
+        XCTAssertNotNil(caseNumberText, "Should show draft case number when no official number")
     }
 }
 
@@ -212,11 +253,12 @@ final class StatCardTests: XCTestCase {
 @MainActor
 final class ReportDetailViewTests: XCTestCase {
 
-    private func createMockReport() -> Report {
+    private func createMockReport(withOfficialCaseNumber: Bool = true) -> Report {
         Report(
             id: UUID(),
             incidentType: .theft,
-            caseNumber: "2026-12345",
+            localCaseNumber: "DRAFT-12345",
+            officialCaseNumber: withOfficialCaseNumber ? "2026-12345" : nil,
             incidentDate: Date(),
             location: "123 Main St",
             summary: "Test summary",
@@ -224,7 +266,7 @@ final class ReportDetailViewTests: XCTestCase {
             status: .draft,
             createdAt: Date(),
             updatedAt: Date(),
-            syncStatus: .local,
+            syncStatus: withOfficialCaseNumber ? .synced : .local,
             subjects: [Person(firstName: "John", lastName: "Doe")],
             victims: [Person(firstName: "Jane", lastName: "Smith", phone: "555-1234")],
             witnesses: [],
@@ -284,6 +326,28 @@ final class ReportDetailViewTests: XCTestCase {
 
         let hstacks = sut.findAll(ViewType.HStack.self)
         XCTAssertGreaterThanOrEqual(hstacks.count, 3)
+    }
+
+    func testReportDetailViewShowsPendingForDraftReport() throws {
+        let report = createMockReport(withOfficialCaseNumber: false)
+        let reportService = MockReportService()
+        let view = ReportDetailView(report: report, reportService: reportService)
+        let sut = try view.inspect()
+
+        let texts = sut.findAll(ViewType.Text.self)
+        let pendingText = texts.first { (try? $0.string()) == "(Pending)" }
+        XCTAssertNotNil(pendingText, "Should show (Pending) for reports without official case number")
+    }
+
+    func testReportDetailViewHidesPendingForSyncedReport() throws {
+        let report = createMockReport(withOfficialCaseNumber: true)
+        let reportService = MockReportService()
+        let view = ReportDetailView(report: report, reportService: reportService)
+        let sut = try view.inspect()
+
+        let texts = sut.findAll(ViewType.Text.self)
+        let pendingText = texts.first { (try? $0.string()) == "(Pending)" }
+        XCTAssertNil(pendingText, "Should not show (Pending) for reports with official case number")
     }
 }
 
@@ -452,9 +516,10 @@ final class EvidenceRowTests: XCTestCase {
 @MainActor
 final class ReportEditorViewTests: XCTestCase {
 
-    private func createMockReport() -> Report {
+    private func createMockReport(withOfficialCaseNumber: Bool = false) -> Report {
         Report(
-            caseNumber: "2026-12345",
+            localCaseNumber: "DRAFT-12345",
+            officialCaseNumber: withOfficialCaseNumber ? "2026-12345" : nil,
             officerId: "OFF-001",
             officerName: "Officer Smith",
             badgeNumber: "12345"
@@ -550,6 +615,39 @@ final class ReportEditorViewTests: XCTestCase {
         let buttons = sut.findAll(ViewType.Button.self)
         // Add Subject, Add Victim, Add Witness, Add Evidence, Cancel, Save
         XCTAssertGreaterThanOrEqual(buttons.count, 4)
+    }
+
+    func testReportEditorViewShowsPendingForDraftReport() throws {
+        let report = createMockReport(withOfficialCaseNumber: false)
+        let reportService = MockReportService()
+        let view = ReportEditorView(report: report, reportService: reportService)
+        let sut = try view.inspect()
+
+        let texts = sut.findAll(ViewType.Text.self)
+        let pendingText = texts.first { (try? $0.string()) == "(Pending)" }
+        XCTAssertNotNil(pendingText, "Should show (Pending) for reports without official case number")
+    }
+
+    func testReportEditorViewHidesPendingForSyncedReport() throws {
+        let report = createMockReport(withOfficialCaseNumber: true)
+        let reportService = MockReportService()
+        let view = ReportEditorView(report: report, reportService: reportService)
+        let sut = try view.inspect()
+
+        let texts = sut.findAll(ViewType.Text.self)
+        let pendingText = texts.first { (try? $0.string()) == "(Pending)" }
+        XCTAssertNil(pendingText, "Should not show (Pending) for reports with official case number")
+    }
+
+    func testReportEditorViewShowsDisplayCaseNumber() throws {
+        let report = createMockReport(withOfficialCaseNumber: false)
+        let reportService = MockReportService()
+        let view = ReportEditorView(report: report, reportService: reportService)
+        let sut = try view.inspect()
+
+        let texts = sut.findAll(ViewType.Text.self)
+        let caseNumberText = texts.first { (try? $0.string()) == "DRAFT-12345" }
+        XCTAssertNotNil(caseNumberText, "Should show draft case number")
     }
 }
 

@@ -105,8 +105,15 @@ struct ReportEditorView: View {
                 Text("Case Number")
                     .foregroundStyle(.secondary)
                 Spacer()
-                Text(report.caseNumber)
-                    .foregroundStyle(.primary)
+                HStack(spacing: 4) {
+                    Text(report.displayCaseNumber)
+                    if !report.hasOfficialCaseNumber {
+                        Text("(Pending)")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    }
+                }
+                .foregroundStyle(.primary)
             }
 
             TextField("Summary", text: $report.summary, axis: .vertical)
@@ -575,7 +582,8 @@ struct EvidencePhotoThumbnail: View {
 #Preview {
     ReportEditorView(
         report: Report(
-            caseNumber: "2026-12345",
+            localCaseNumber: "DRAFT-12345",
+            officialCaseNumber: nil,
             officerId: "OFF-001",
             officerName: "Officer Smith",
             badgeNumber: "12345"

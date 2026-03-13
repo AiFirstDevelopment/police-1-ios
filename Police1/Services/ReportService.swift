@@ -67,28 +67,41 @@ final class MockReportService: ReportServiceProtocol, ObservableObject {
         // Simulate sync delay
         try await Task.sleep(nanoseconds: 1_500_000_000)
 
-        // Mark all local reports as synced
+        // Mark all local reports as synced and assign official case numbers
         for i in reports.indices {
             if reports[i].syncStatus == .local {
                 reports[i].syncStatus = .synced
+                // Server assigns official case number on first sync
+                if reports[i].officialCaseNumber == nil {
+                    reports[i].officialCaseNumber = generateOfficialCaseNumber()
+                }
             }
         }
     }
 
     func createNewReport() -> Report {
-        let caseNumber = generateCaseNumber()
+        let localCaseNumber = generateLocalCaseNumber()
         return Report(
-            caseNumber: caseNumber,
+            localCaseNumber: localCaseNumber,
+            officialCaseNumber: nil, // Will be assigned by server on sync
             officerId: officerId,
             officerName: officerName,
             badgeNumber: badgeNumber
         )
     }
 
-    private func generateCaseNumber() -> String {
-        let year = Calendar.current.component(.year, from: Date())
+    /// Generates a local draft case number (e.g., "DRAFT-68691")
+    /// Official case number is assigned by the server/RMS on sync
+    private func generateLocalCaseNumber() -> String {
         let random = Int.random(in: 10000...99999)
-        return "\(year)-\(random)"
+        return "DRAFT-\(random)"
+    }
+
+    /// Generates an official case number (simulating server assignment)
+    private func generateOfficialCaseNumber() -> String {
+        let year = Calendar.current.component(.year, from: Date())
+        let sequential = Int.random(in: 10000...99999) // In production, this would be sequential from RMS
+        return "\(year)-\(sequential)"
     }
 
     // MARK: - Mock Data Generation
@@ -100,7 +113,8 @@ final class MockReportService: ReportServiceProtocol, ObservableObject {
             Report(
                 id: UUID(),
                 incidentType: .theft,
-                caseNumber: "2026-45892",
+                localCaseNumber: "DRAFT-45892",
+                officialCaseNumber: nil, // Not yet synced
                 incidentDate: calendar.date(byAdding: .hour, value: -3, to: Date())!,
                 location: "1247 Oak Street, Apt 4B",
                 summary: "Residential theft - electronics stolen from unlocked apartment",
@@ -153,7 +167,8 @@ final class MockReportService: ReportServiceProtocol, ObservableObject {
             Report(
                 id: UUID(),
                 incidentType: .trafficAccident,
-                caseNumber: "2026-45801",
+                localCaseNumber: "DRAFT-45801",
+                officialCaseNumber: "2026-45801", // Synced - has official number
                 incidentDate: calendar.date(byAdding: .day, value: -1, to: Date())!,
                 location: "Intersection of Main St and 5th Ave",
                 summary: "Two-vehicle collision, minor injuries, one citation issued",
@@ -204,7 +219,8 @@ final class MockReportService: ReportServiceProtocol, ObservableObject {
             Report(
                 id: UUID(),
                 incidentType: .domesticDisturbance,
-                caseNumber: "2026-45756",
+                localCaseNumber: "DRAFT-45756",
+                officialCaseNumber: "2026-45756", // Synced - has official number
                 incidentDate: calendar.date(byAdding: .day, value: -2, to: Date())!,
                 location: "892 Pine Lane",
                 summary: "Verbal domestic dispute, both parties separated, no arrests",
@@ -237,7 +253,8 @@ final class MockReportService: ReportServiceProtocol, ObservableObject {
             Report(
                 id: UUID(),
                 incidentType: .suspiciousActivity,
-                caseNumber: "2026-45912",
+                localCaseNumber: "DRAFT-45912",
+                officialCaseNumber: nil, // Not yet synced
                 incidentDate: Date(),
                 location: "Central Park, near fountain",
                 summary: "Suspicious person reported - unable to locate",
@@ -258,7 +275,8 @@ final class MockReportService: ReportServiceProtocol, ObservableObject {
             Report(
                 id: UUID(),
                 incidentType: .dui,
-                caseNumber: "2026-45623",
+                localCaseNumber: "DRAFT-45623",
+                officialCaseNumber: "2026-45623", // Synced - has official number
                 incidentDate: calendar.date(byAdding: .day, value: -5, to: Date())!,
                 location: "Highway 101 NB, Mile Marker 42",
                 summary: "DUI arrest - driver failed field sobriety, BAC 0.14",

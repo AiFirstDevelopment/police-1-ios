@@ -85,7 +85,7 @@ final class MockReportServiceTests: XCTestCase {
         let initialCount = service.reports.count
 
         let newReport = Report(
-            caseNumber: "2026-99999",
+            localCaseNumber: "DRAFT-99999",
             officerId: "OFF-001",
             officerName: "Officer Smith",
             badgeNumber: "12345"
@@ -169,7 +169,7 @@ final class MockReportServiceTests: XCTestCase {
 
         // Save a new report (will be local)
         var newReport = Report(
-            caseNumber: "2026-88888",
+            localCaseNumber: "DRAFT-88888",
             officerId: "OFF-001",
             officerName: "Officer Smith",
             badgeNumber: "12345"
@@ -186,15 +186,50 @@ final class MockReportServiceTests: XCTestCase {
         XCTAssertEqual(syncedReport?.syncStatus, .synced)
     }
 
+    func testSyncReportsAssignsOfficialCaseNumber() async throws {
+        let service = MockReportService()
+
+        // Create and save a new report (no official case number yet)
+        var newReport = service.createNewReport()
+        XCTAssertNil(newReport.officialCaseNumber)
+        XCTAssertTrue(newReport.localCaseNumber.hasPrefix("DRAFT-"))
+
+        newReport = try await service.saveReport(newReport)
+
+        // Sync
+        try await service.syncReports()
+
+        // Find the report and check official case number was assigned
+        let syncedReport = service.reports.first { $0.id == newReport.id }
+        XCTAssertNotNil(syncedReport?.officialCaseNumber)
+        XCTAssertTrue(syncedReport!.officialCaseNumber!.hasPrefix("2026-"))
+    }
+
+    func testSyncReportsDoesNotReassignOfficialCaseNumber() async throws {
+        let service = MockReportService()
+
+        // Find a report that already has an official case number
+        let existingReport = service.reports.first { $0.officialCaseNumber != nil }!
+        let originalOfficialNumber = existingReport.officialCaseNumber!
+
+        // Sync
+        try await service.syncReports()
+
+        // Official case number should not change
+        let syncedReport = service.reports.first { $0.id == existingReport.id }
+        XCTAssertEqual(syncedReport?.officialCaseNumber, originalOfficialNumber)
+    }
+
     // MARK: - Create New Report Tests
 
-    func testCreateNewReportGeneratesCaseNumber() {
+    func testCreateNewReportGeneratesLocalCaseNumber() {
         let service = MockReportService()
 
         let newReport = service.createNewReport()
 
-        XCTAssertFalse(newReport.caseNumber.isEmpty)
-        XCTAssertTrue(newReport.caseNumber.contains("-"))
+        XCTAssertFalse(newReport.localCaseNumber.isEmpty)
+        XCTAssertTrue(newReport.localCaseNumber.hasPrefix("DRAFT-"))
+        XCTAssertNil(newReport.officialCaseNumber)
     }
 
     func testCreateNewReportUsesDefaultOfficerInfo() {
@@ -258,8 +293,18 @@ final class MockReportServiceTests: XCTestCase {
         let service = MockReportService()
 
         for report in service.reports {
-            XCTAssertFalse(report.caseNumber.isEmpty)
-            XCTAssertTrue(report.caseNumber.hasPrefix("2026-"))
+            // All reports should have a local case number
+            XCTAssertFalse(report.localCaseNumber.isEmpty)
+            XCTAssertTrue(report.localCaseNumber.hasPrefix("DRAFT-"))
+
+            // Synced reports should have official case numbers
+            if report.syncStatus == .synced {
+                XCTAssertNotNil(report.officialCaseNumber)
+                XCTAssertTrue(report.officialCaseNumber!.hasPrefix("2026-"))
+            }
+
+            // displayCaseNumber should return something
+            XCTAssertFalse(report.displayCaseNumber.isEmpty)
         }
     }
 
