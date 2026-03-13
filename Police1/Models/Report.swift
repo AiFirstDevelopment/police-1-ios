@@ -232,6 +232,7 @@ struct EvidenceItem: Identifiable, Codable, Equatable {
     var location: String
     var collectedAt: Date
     var photoUrls: [String]
+    var photos: [EvidencePhoto]
 
     init(
         id: UUID = UUID(),
@@ -239,7 +240,8 @@ struct EvidenceItem: Identifiable, Codable, Equatable {
         description: String = "",
         location: String = "",
         collectedAt: Date = Date(),
-        photoUrls: [String] = []
+        photoUrls: [String] = [],
+        photos: [EvidencePhoto] = []
     ) {
         self.id = id
         self.type = type
@@ -247,6 +249,15 @@ struct EvidenceItem: Identifiable, Codable, Equatable {
         self.location = location
         self.collectedAt = collectedAt
         self.photoUrls = photoUrls
+        self.photos = photos
+    }
+
+    var hasPhotos: Bool {
+        !photos.isEmpty || !photoUrls.isEmpty
+    }
+
+    var photoCount: Int {
+        photos.count + photoUrls.count
     }
 }
 

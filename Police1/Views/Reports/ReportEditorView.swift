@@ -309,12 +309,40 @@ struct EvidenceListRow: View {
                 .frame(width: 24)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(item.type.rawValue)
-                    .font(.body)
+                HStack {
+                    Text(item.type.rawValue)
+                        .font(.body)
+
+                    if item.hasPhotos {
+                        HStack(spacing: 2) {
+                            Image(systemName: "photo.fill")
+                            Text("\(item.photoCount)")
+                        }
+                        .font(.caption2)
+                        .foregroundStyle(.blue)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.blue.opacity(0.1))
+                        .clipShape(Capsule())
+                    }
+                }
+
                 Text(item.description)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
+            }
+
+            Spacer()
+
+            // Show first photo thumbnail if available
+            if let firstPhoto = item.photos.first,
+               let thumbnail = firstPhoto.loadThumbnail() {
+                Image(uiImage: thumbnail)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: 40, height: 40)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
             }
         }
     }
@@ -420,6 +448,8 @@ struct EvidenceEditorView: View {
     @State private var type: EvidenceType = .other
     @State private var description = ""
     @State private var location = ""
+    @State private var photos: [EvidencePhoto] = []
+    @State private var showingPhotoCapture = false
 
     var body: some View {
         NavigationStack {
@@ -439,6 +469,37 @@ struct EvidenceEditorView: View {
                         .lineLimit(2...4)
                     TextField("Collection Location", text: $location)
                 }
+
+                Section {
+                    if !photos.isEmpty {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(photos) { photo in
+                                    EvidencePhotoThumbnail(photo: photo) {
+                                        photos.removeAll { $0.id == photo.id }
+                                    }
+                                }
+                            }
+                        }
+                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                    }
+
+                    Button(action: { showingPhotoCapture = true }) {
+                        Label("Add Photos", systemImage: "camera.fill")
+                    }
+                } header: {
+                    HStack {
+                        Text("Photos")
+                        Spacer()
+                        if !photos.isEmpty {
+                            Text("\(photos.count)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                } footer: {
+                    Text("Photos are stored locally and synced when connected.")
+                }
             }
             .navigationTitle("Add Evidence")
             .navigationBarTitleDisplayMode(.inline)
@@ -451,7 +512,8 @@ struct EvidenceEditorView: View {
                         let evidence = EvidenceItem(
                             type: type,
                             description: description,
-                            location: location
+                            location: location,
+                            photos: photos
                         )
                         onSave(evidence)
                         dismiss()
@@ -459,6 +521,51 @@ struct EvidenceEditorView: View {
                     .disabled(description.isEmpty)
                 }
             }
+            .sheet(isPresented: $showingPhotoCapture) {
+                PhotoCaptureView { capturedPhoto in
+                    if let savedPhoto = PhotoStorageService.shared.savePhoto(
+                        capturedPhoto.image,
+                        metadata: capturedPhoto.metadata
+                    ) {
+                        photos.append(savedPhoto)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Evidence Photo Thumbnail
+
+struct EvidencePhotoThumbnail: View {
+    let photo: EvidencePhoto
+    let onDelete: () -> Void
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            if let image = photo.loadThumbnail() {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: 80, height: 80)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            } else {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 80, height: 80)
+                    .overlay {
+                        Image(systemName: "photo")
+                            .foregroundStyle(.secondary)
+                    }
+            }
+
+            Button(action: onDelete) {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.white)
+                    .shadow(radius: 1)
+            }
+            .offset(x: 4, y: -4)
         }
     }
 }

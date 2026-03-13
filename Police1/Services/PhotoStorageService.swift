@@ -1,0 +1,160 @@
+import Foundation
+import UIKit
+
+// MARK: - Evidence Photo Model
+
+struct EvidencePhoto: Identifiable, Codable, Equatable {
+    let id: UUID
+    let fileName: String
+    let capturedAt: Date
+    let metadata: PhotoMetadata?
+
+    init(id: UUID = UUID(), fileName: String, capturedAt: Date, metadata: PhotoMetadata? = nil) {
+        self.id = id
+        self.fileName = fileName
+        self.capturedAt = capturedAt
+        self.metadata = metadata
+    }
+
+    func loadImage() -> UIImage? {
+        PhotoStorageService.shared.loadImage(fileName: fileName)
+    }
+
+    func loadThumbnail() -> UIImage? {
+        PhotoStorageService.shared.loadThumbnail(fileName: fileName)
+    }
+
+    static func == (lhs: EvidencePhoto, rhs: EvidencePhoto) -> Bool {
+        lhs.id == rhs.id && lhs.fileName == rhs.fileName
+    }
+}
+
+// MARK: - Photo Storage Service
+
+final class PhotoStorageService {
+    static let shared = PhotoStorageService()
+
+    private let fileManager = FileManager.default
+    private let photosDirectory: URL
+    private let thumbnailsDirectory: URL
+
+    private init() {
+        let documentsPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        photosDirectory = documentsPath.appendingPathComponent("EvidencePhotos", isDirectory: true)
+        thumbnailsDirectory = documentsPath.appendingPathComponent("EvidenceThumbnails", isDirectory: true)
+
+        createDirectoriesIfNeeded()
+    }
+
+    private func createDirectoriesIfNeeded() {
+        try? fileManager.createDirectory(at: photosDirectory, withIntermediateDirectories: true)
+        try? fileManager.createDirectory(at: thumbnailsDirectory, withIntermediateDirectories: true)
+    }
+
+    // MARK: - Save Photo
+
+    func savePhoto(_ image: UIImage, metadata: PhotoMetadata?) -> EvidencePhoto? {
+        let id = UUID()
+        let fileName = "\(id.uuidString).jpg"
+
+        guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+            return nil
+        }
+
+        let fileURL = photosDirectory.appendingPathComponent(fileName)
+
+        do {
+            try imageData.write(to: fileURL)
+            saveThumbnail(image, fileName: fileName)
+            return EvidencePhoto(
+                id: id,
+                fileName: fileName,
+                capturedAt: metadata?.capturedAt ?? Date(),
+                metadata: metadata
+            )
+        } catch {
+            print("Failed to save photo: \(error)")
+            return nil
+        }
+    }
+
+    private func saveThumbnail(_ image: UIImage, fileName: String) {
+        let thumbnailSize = CGSize(width: 200, height: 200)
+        let renderer = UIGraphicsImageRenderer(size: thumbnailSize)
+        let thumbnail = renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: thumbnailSize))
+        }
+
+        if let data = thumbnail.jpegData(compressionQuality: 0.6) {
+            let thumbnailURL = thumbnailsDirectory.appendingPathComponent(fileName)
+            try? data.write(to: thumbnailURL)
+        }
+    }
+
+    // MARK: - Load Photo
+
+    func loadImage(fileName: String) -> UIImage? {
+        let fileURL = photosDirectory.appendingPathComponent(fileName)
+        guard let data = try? Data(contentsOf: fileURL) else {
+            return nil
+        }
+        return UIImage(data: data)
+    }
+
+    func loadThumbnail(fileName: String) -> UIImage? {
+        let thumbnailURL = thumbnailsDirectory.appendingPathComponent(fileName)
+        if let data = try? Data(contentsOf: thumbnailURL) {
+            return UIImage(data: data)
+        }
+        // Fallback to full image if thumbnail doesn't exist
+        return loadImage(fileName: fileName)
+    }
+
+    // MARK: - Delete Photo
+
+    func deletePhoto(fileName: String) {
+        let fileURL = photosDirectory.appendingPathComponent(fileName)
+        let thumbnailURL = thumbnailsDirectory.appendingPathComponent(fileName)
+
+        try? fileManager.removeItem(at: fileURL)
+        try? fileManager.removeItem(at: thumbnailURL)
+    }
+
+    func deletePhotos(_ photos: [EvidencePhoto]) {
+        for photo in photos {
+            deletePhoto(fileName: photo.fileName)
+        }
+    }
+
+    // MARK: - Storage Info
+
+    var totalStorageUsed: Int64 {
+        calculateDirectorySize(photosDirectory) + calculateDirectorySize(thumbnailsDirectory)
+    }
+
+    var formattedStorageUsed: String {
+        ByteCountFormatter.string(fromByteCount: totalStorageUsed, countStyle: .file)
+    }
+
+    private func calculateDirectorySize(_ url: URL) -> Int64 {
+        guard let enumerator = fileManager.enumerator(at: url, includingPropertiesForKeys: [.fileSizeKey]) else {
+            return 0
+        }
+
+        var totalSize: Int64 = 0
+        for case let fileURL as URL in enumerator {
+            if let fileSize = try? fileURL.resourceValues(forKeys: [.fileSizeKey]).fileSize {
+                totalSize += Int64(fileSize)
+            }
+        }
+        return totalSize
+    }
+
+    // MARK: - Cleanup
+
+    func clearAllPhotos() {
+        try? fileManager.removeItem(at: photosDirectory)
+        try? fileManager.removeItem(at: thumbnailsDirectory)
+        createDirectoriesIfNeeded()
+    }
+}

@@ -190,7 +190,10 @@ Connectivity requirements limit field usability.
 | **Auto-Save** | Real-time | Periodic | Manual | Periodic | Manual |
 | **Onboarding Time** | < 1 hour | 2 weeks | 2 weeks | 1 week | 2 weeks |
 | **Voice Input** | Built-in | Add-on | No | Add-on | No |
-| **Photo/Evidence** | Integrated | Integrated | Separate | Integrated | Separate |
+| **In-Field Camera** | Native | Limited | No | Requires hardware | No |
+| **Photo GPS Tagging** | Automatic | Manual | No | Yes | No |
+| **Offline Photos** | Full sync | Partial | No | Partial | No |
+| **Photo Library** | Integrated | Integrated | Separate | Integrated | Separate |
 | **GPS Location** | Auto | Manual | Manual | Auto | Manual |
 | **Works Standalone** | Yes | No | No | No | No |
 | **Modern UI** | Yes | Partial | No | Yes | No |

@@ -361,30 +361,100 @@ struct PersonRow: View {
 
 struct EvidenceRow: View {
     let item: EvidenceItem
+    @State private var showingPhotos = false
 
     var body: some View {
-        HStack {
-            ZStack {
-                Circle()
-                    .fill(Color.purple.opacity(0.15))
-                    .frame(width: 40, height: 40)
-                Image(systemName: item.type.icon)
-                    .foregroundStyle(.purple)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                ZStack {
+                    Circle()
+                        .fill(Color.purple.opacity(0.15))
+                        .frame(width: 40, height: 40)
+                    Image(systemName: item.type.icon)
+                        .foregroundStyle(.purple)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack {
+                        Text(item.type.rawValue)
+                            .font(.body.weight(.medium))
+
+                        if item.hasPhotos {
+                            HStack(spacing: 2) {
+                                Image(systemName: "photo.fill")
+                                Text("\(item.photoCount)")
+                            }
+                            .font(.caption2)
+                            .foregroundStyle(.blue)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.blue.opacity(0.1))
+                            .clipShape(Capsule())
+                        }
+                    }
+
+                    Text(item.description)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                if item.hasPhotos {
+                    Button(action: { showingPhotos.toggle() }) {
+                        Image(systemName: showingPhotos ? "chevron.up" : "chevron.down")
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(item.type.rawValue)
-                    .font(.body.weight(.medium))
-                Text(item.description)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            // Photo gallery
+            if showingPhotos && !item.photos.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(item.photos) { photo in
+                            EvidencePhotoView(photo: photo)
+                        }
+                    }
+                }
             }
-
-            Spacer()
         }
         .padding()
         .background(Color(.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+}
+
+// MARK: - Evidence Photo View
+
+struct EvidencePhotoView: View {
+    let photo: EvidencePhoto
+    @State private var showingFullScreen = false
+
+    var body: some View {
+        Group {
+            if let thumbnail = photo.loadThumbnail() {
+                Image(uiImage: thumbnail)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: 100, height: 100)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .onTapGesture {
+                        showingFullScreen = true
+                    }
+            } else {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 100, height: 100)
+                    .overlay {
+                        Image(systemName: "photo")
+                            .foregroundStyle(.secondary)
+                    }
+            }
+        }
+        .sheet(isPresented: $showingFullScreen) {
+            PhotoDetailView(photo: photo)
+        }
     }
 }
 

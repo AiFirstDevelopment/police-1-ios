@@ -43,6 +43,8 @@
 		A1B2C3D4000000C2 /* ReportsViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000C3 /* ReportsViewTests.swift */; };
 		A1B2C3D4000000C4 /* ReportModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000C5 /* ReportModelTests.swift */; };
 		A1B2C3D4000000C6 /* ReportServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000C7 /* ReportServiceTests.swift */; };
+		A1B2C3D4000000D0 /* PhotoCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000D1 /* PhotoCaptureView.swift */; };
+		A1B2C3D4000000D2 /* PhotoStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000D3 /* PhotoStorageService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -94,6 +96,8 @@
 		A1B2C3D4000000C3 /* ReportsViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportsViewTests.swift; sourceTree = "<group>"; };
 		A1B2C3D4000000C5 /* ReportModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportModelTests.swift; sourceTree = "<group>"; };
 		A1B2C3D4000000C7 /* ReportServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportServiceTests.swift; sourceTree = "<group>"; };
+		A1B2C3D4000000D1 /* PhotoCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoCaptureView.swift; sourceTree = "<group>"; };
+		A1B2C3D4000000D3 /* PhotoStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoStorageService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -169,8 +173,17 @@
 				A1B2C3D400000093 /* RootView.swift */,
 				A1B2C3D400000097 /* EnrollmentView.swift */,
 				A1B2C3D4000000C1 /* Reports */,
+				A1B2C3D4000000D4 /* Components */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4000000D4 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4000000D1 /* PhotoCaptureView.swift */,
+			);
+			path = Components;
 			sourceTree = "<group>";
 		};
 		A1B2C3D4000000C1 /* Reports */ = {
@@ -206,6 +219,7 @@
 				A1B2C3D400000021 /* NetworkService.swift */,
 				A1B2C3D400000023 /* AppDependencies.swift */,
 				A1B2C3D4000000B3 /* ReportService.swift */,
+				A1B2C3D4000000D3 /* PhotoStorageService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -373,6 +387,8 @@
 				A1B2C3D4000000B4 /* ReportsListView.swift in Sources */,
 				A1B2C3D4000000B6 /* ReportDetailView.swift in Sources */,
 				A1B2C3D4000000B8 /* ReportEditorView.swift in Sources */,
+				A1B2C3D4000000D0 /* PhotoCaptureView.swift in Sources */,
+				A1B2C3D4000000D2 /* PhotoStorageService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -536,6 +552,9 @@
 				DEVELOPMENT_ASSET_PATHS = "\"Police1/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Police1 needs camera access to capture evidence photos for your reports.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Police1 uses your location to automatically tag evidence photos with GPS coordinates.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Police1 needs photo library access to attach existing photos to your evidence reports.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -564,6 +583,9 @@
 				DEVELOPMENT_ASSET_PATHS = "\"Police1/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Police1 needs camera access to capture evidence photos for your reports.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Police1 uses your location to automatically tag evidence photos with GPS coordinates.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Police1 needs photo library access to attach existing photos to your evidence reports.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
