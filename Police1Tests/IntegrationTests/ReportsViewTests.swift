@@ -1028,23 +1028,24 @@ final class PersonPickerTypeTests: XCTestCase {
     }
 }
 
-// MARK: - EvidencePhotoView Tests
+// MARK: - EvidenceMediaView Tests
 
 @MainActor
 final class EvidencePhotoViewTests: XCTestCase {
 
-    func testEvidencePhotoViewHasGroup() throws {
-        let photo = EvidencePhoto(fileName: "test.jpg", capturedAt: Date(), metadata: nil)
-        let view = EvidencePhotoView(photo: photo)
+    func testEvidenceMediaViewHasZStacks() throws {
+        let media = EvidencePhoto(fileName: "test.jpg", capturedAt: Date(), metadata: nil)
+        let view = EvidenceMediaView(media: media)
         let sut = try view.inspect()
 
-        // View renders either image or placeholder
-        XCTAssertNoThrow(try sut.find(ViewType.Group.self))
+        // View renders ZStack structure
+        let zstacks = sut.findAll(ViewType.ZStack.self)
+        XCTAssertGreaterThanOrEqual(zstacks.count, 1)
     }
 
-    func testEvidencePhotoViewShowsPlaceholderWhenNoImage() throws {
-        let photo = EvidencePhoto(fileName: "nonexistent.jpg", capturedAt: Date(), metadata: nil)
-        let view = EvidencePhotoView(photo: photo)
+    func testEvidenceMediaViewShowsPlaceholderWhenNoImage() throws {
+        let media = EvidencePhoto(fileName: "nonexistent.jpg", capturedAt: Date(), metadata: nil)
+        let view = EvidenceMediaView(media: media)
         let sut = try view.inspect()
 
         // Should find placeholder elements when image doesn't exist
@@ -1052,43 +1053,43 @@ final class EvidencePhotoViewTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(images.count, 1)
     }
 
-    func testEvidencePhotoViewHasOverlay() throws {
-        let photo = EvidencePhoto(fileName: "nonexistent.jpg", capturedAt: Date(), metadata: nil)
-        let view = EvidencePhotoView(photo: photo)
+    func testEvidenceMediaViewVideoShowsPlayIcon() throws {
+        let media = EvidencePhoto(fileName: "test.mp4", capturedAt: Date(), metadata: nil, mediaType: .video)
+        let view = EvidenceMediaView(media: media)
         let sut = try view.inspect()
 
-        // Placeholder has photo icon overlay
+        // Video should have play icon
         let images = sut.findAll(ViewType.Image.self)
         XCTAssertGreaterThanOrEqual(images.count, 1)
     }
 }
 
-// MARK: - PhotoDetailView Tests
+// MARK: - MediaDetailView Tests
 
 @MainActor
 final class PhotoDetailViewTests: XCTestCase {
 
-    func testPhotoDetailViewHasNavigationStack() throws {
-        let photo = EvidencePhoto(fileName: "test.jpg", capturedAt: Date(), metadata: nil)
-        let view = PhotoDetailView(photo: photo)
+    func testMediaDetailViewHasNavigationStack() throws {
+        let media = EvidencePhoto(fileName: "test.jpg", capturedAt: Date(), metadata: nil)
+        let view = MediaDetailView(media: media)
         let sut = try view.inspect()
 
         let nav = try sut.find(ViewType.NavigationStack.self)
         XCTAssertNotNil(nav)
     }
 
-    func testPhotoDetailViewHasVStack() throws {
-        let photo = EvidencePhoto(fileName: "test.jpg", capturedAt: Date(), metadata: nil)
-        let view = PhotoDetailView(photo: photo)
+    func testMediaDetailViewHasVStack() throws {
+        let media = EvidencePhoto(fileName: "test.jpg", capturedAt: Date(), metadata: nil)
+        let view = MediaDetailView(media: media)
         let sut = try view.inspect()
 
         let vstack = try sut.find(ViewType.VStack.self)
         XCTAssertNotNil(vstack)
     }
 
-    func testPhotoDetailViewShowsUnavailableWhenNoImage() throws {
-        let photo = EvidencePhoto(fileName: "nonexistent.jpg", capturedAt: Date(), metadata: nil)
-        let view = PhotoDetailView(photo: photo)
+    func testMediaDetailViewShowsUnavailableWhenNoImage() throws {
+        let media = EvidencePhoto(fileName: "nonexistent.jpg", capturedAt: Date(), metadata: nil)
+        let view = MediaDetailView(media: media)
         let sut = try view.inspect()
 
         // Should show ContentUnavailableView when image doesn't load
@@ -1096,20 +1097,30 @@ final class PhotoDetailViewTests: XCTestCase {
         XCTAssertNotNil(unavailable)
     }
 
-    func testPhotoDetailViewWithMetadataShowsBar() throws {
+    func testMediaDetailViewWithMetadataShowsBar() throws {
         let metadata = PhotoMetadata(
             capturedAt: Date(),
             latitude: 37.7749,
             longitude: -122.4194,
             altitude: nil
         )
-        let photo = EvidencePhoto(fileName: "test.jpg", capturedAt: Date(), metadata: metadata)
-        let view = PhotoDetailView(photo: photo)
+        let media = EvidencePhoto(fileName: "test.jpg", capturedAt: Date(), metadata: metadata)
+        let view = MediaDetailView(media: media)
         let sut = try view.inspect()
 
-        // PhotoMetadataBar should be present
+        // MediaMetadataBar should be present
         let hstacks = sut.findAll(ViewType.HStack.self)
         XCTAssertGreaterThanOrEqual(hstacks.count, 1)
+    }
+
+    func testMediaDetailViewForVideoShowsVideoPlayer() throws {
+        let media = EvidencePhoto(fileName: "test.mp4", capturedAt: Date(), metadata: nil, mediaType: .video)
+        let view = MediaDetailView(media: media)
+        let sut = try view.inspect()
+
+        // Video detail view should have structure
+        let vstack = try sut.find(ViewType.VStack.self)
+        XCTAssertNotNil(vstack)
     }
 }
 
@@ -1166,6 +1177,5 @@ extension PersonListRow: @retroactive Inspectable {}
 extension EvidenceListRow: @retroactive Inspectable {}
 extension PersonEditorView: @retroactive Inspectable {}
 extension EvidenceEditorView: @retroactive Inspectable {}
-extension EvidencePhotoView: @retroactive Inspectable {}
-extension PhotoDetailView: @retroactive Inspectable {}
 extension PhotoGalleryView: @retroactive Inspectable {}
+extension MediaDetailView: @retroactive Inspectable {}

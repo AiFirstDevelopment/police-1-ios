@@ -13,7 +13,7 @@ struct ReportEditorView: View {
     @State private var showingPhotoPicker = false
     @State private var showingDiscardAlert = false
     @State private var hasChanges = false
-    @State private var capturedPhotos: [CapturedPhoto] = []
+    @State private var capturedMedia: [CapturedMedia] = []
 
     private let isNewReport: Bool
 
@@ -90,8 +90,8 @@ struct ReportEditorView: View {
                 }
             }
             .sheet(isPresented: $showingPhotoPicker) {
-                PhotoCaptureView { photo in
-                    capturedPhotos.append(photo)
+                PhotoCaptureView { media in
+                    capturedMedia.append(media)
                     hasChanges = true
                 }
             }
@@ -227,11 +227,11 @@ struct ReportEditorView: View {
         }
     }
 
-    // MARK: - Photos Section
+    // MARK: - Media Section
 
     private var photosSection: some View {
         Section {
-            if capturedPhotos.isEmpty {
+            if capturedMedia.isEmpty {
                 Button(action: { showingPhotoPicker = true }) {
                     HStack(spacing: 12) {
                         ZStack {
@@ -244,9 +244,9 @@ struct ReportEditorView: View {
                         }
 
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Add Photos")
+                            Text("Add Media")
                                 .font(.body.weight(.medium))
-                            Text("Capture or select evidence photos")
+                            Text("Capture or select photos and videos")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -261,9 +261,9 @@ struct ReportEditorView: View {
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
-                        ForEach(capturedPhotos) { photo in
-                            PhotoThumbnail(photo: photo) {
-                                capturedPhotos.removeAll { $0.id == photo.id }
+                        ForEach(capturedMedia) { media in
+                            MediaThumbnail(media: media) {
+                                capturedMedia.removeAll { $0.id == media.id }
                                 hasChanges = true
                             }
                         }
@@ -291,15 +291,29 @@ struct ReportEditorView: View {
             }
         } header: {
             HStack {
-                Text("Photos")
+                Text("Media")
                 Spacer()
-                if !capturedPhotos.isEmpty {
-                    Text("\(capturedPhotos.count) photo\(capturedPhotos.count == 1 ? "" : "s")")
+                if !capturedMedia.isEmpty {
+                    Text(mediaCountText)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
         }
+    }
+
+    private var mediaCountText: String {
+        let photoCount = capturedMedia.filter { $0.mediaType == .photo }.count
+        let videoCount = capturedMedia.filter { $0.mediaType == .video }.count
+
+        var parts: [String] = []
+        if photoCount > 0 {
+            parts.append("\(photoCount) photo\(photoCount == 1 ? "" : "s")")
+        }
+        if videoCount > 0 {
+            parts.append("\(videoCount) video\(videoCount == 1 ? "" : "s")")
+        }
+        return parts.joined(separator: ", ")
     }
 
     // MARK: - Evidence Section
@@ -615,12 +629,21 @@ struct EvidenceEditorView: View {
                 }
             }
             .sheet(isPresented: $showingPhotoCapture) {
-                PhotoCaptureView { capturedPhoto in
-                    if let savedPhoto = PhotoStorageService.shared.savePhoto(
-                        capturedPhoto.image,
-                        metadata: capturedPhoto.metadata
-                    ) {
-                        photos.append(savedPhoto)
+                PhotoCaptureView { capturedMedia in
+                    if capturedMedia.isVideo, let videoURL = capturedMedia.videoURL {
+                        if let savedMedia = PhotoStorageService.shared.saveVideo(
+                            videoURL,
+                            metadata: capturedMedia.metadata
+                        ) {
+                            photos.append(savedMedia)
+                        }
+                    } else if let image = capturedMedia.image {
+                        if let savedMedia = PhotoStorageService.shared.savePhoto(
+                            image,
+                            metadata: capturedMedia.metadata
+                        ) {
+                            photos.append(savedMedia)
+                        }
                     }
                 }
             }
@@ -636,20 +659,34 @@ struct EvidencePhotoThumbnail: View {
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            if let image = photo.loadThumbnail() {
-                Image(uiImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: 80, height: 80)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-            } else {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.gray.opacity(0.3))
-                    .frame(width: 80, height: 80)
-                    .overlay {
-                        Image(systemName: "photo")
-                            .foregroundStyle(.secondary)
+            ZStack {
+                if let image = photo.loadThumbnail() {
+                    Image(uiImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 80, height: 80)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                } else {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: 80, height: 80)
+                        .overlay {
+                            Image(systemName: photo.isVideo ? "video" : "photo")
+                                .foregroundStyle(.secondary)
+                        }
+                }
+
+                // Video indicator
+                if photo.isVideo {
+                    ZStack {
+                        Circle()
+                            .fill(.black.opacity(0.5))
+                            .frame(width: 26, height: 26)
+                        Image(systemName: "play.fill")
+                            .font(.caption2)
+                            .foregroundStyle(.white)
                     }
+                }
             }
 
             Button(action: onDelete) {

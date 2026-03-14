@@ -1,17 +1,19 @@
 import SwiftUI
 import PhotosUI
 import CoreLocation
+import AVKit
+import UniformTypeIdentifiers
 
-// MARK: - Photo Capture View
+// MARK: - Media Capture View
 
 struct PhotoCaptureView: View {
     @Environment(\.dismiss) private var dismiss
-    let onPhotoCaptured: (CapturedPhoto) -> Void
+    let onPhotoCaptured: (CapturedMedia) -> Void
 
     @State private var showingCamera = false
-    @State private var showingPhotoLibrary = false
+    @State private var showingVideoCamera = false
     @State private var selectedItems: [PhotosPickerItem] = []
-    @State private var capturedPhotos: [CapturedPhoto] = []
+    @State private var capturedMedia: [CapturedMedia] = []
     @State private var isProcessing = false
 
     var body: some View {
@@ -28,18 +30,19 @@ struct PhotoCaptureView: View {
                             .foregroundStyle(.blue)
                     }
 
-                    Text("Add Photos")
+                    Text("Add Media")
                         .font(.title2.weight(.bold))
 
-                    Text("Capture evidence or select from library")
+                    Text("Capture photos, videos, or select from library")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
                 }
                 .padding(.top, 20)
 
                 // Capture options
                 VStack(spacing: 16) {
-                    // Camera button
+                    // Photo camera button
                     Button(action: { showingCamera = true }) {
                         HStack(spacing: 16) {
                             ZStack {
@@ -54,7 +57,7 @@ struct PhotoCaptureView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Take Photo")
                                     .font(.body.weight(.semibold))
-                                Text("Use camera to capture evidence")
+                                Text("Capture photo evidence")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -70,11 +73,42 @@ struct PhotoCaptureView: View {
                     }
                     .buttonStyle(.plain)
 
-                    // Photo library button
+                    // Video camera button
+                    Button(action: { showingVideoCamera = true }) {
+                        HStack(spacing: 16) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.red.opacity(0.15))
+                                    .frame(width: 50, height: 50)
+                                Image(systemName: "video.fill")
+                                    .font(.title2)
+                                    .foregroundStyle(.red)
+                            }
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Record Video")
+                                    .font(.body.weight(.semibold))
+                                Text("Capture video evidence")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Spacer()
+
+                            Image(systemName: "chevron.right")
+                                .foregroundStyle(.tertiary)
+                        }
+                        .padding()
+                        .background(Color(.secondarySystemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .buttonStyle(.plain)
+
+                    // Media library button
                     PhotosPicker(
                         selection: $selectedItems,
                         maxSelectionCount: 10,
-                        matching: .images
+                        matching: .any(of: [.images, .videos])
                     ) {
                         HStack(spacing: 16) {
                             ZStack {
@@ -87,9 +121,9 @@ struct PhotoCaptureView: View {
                             }
 
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Photo Library")
+                                Text("Media Library")
                                     .font(.body.weight(.semibold))
-                                Text("Select existing photos")
+                                Text("Select photos or videos")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -107,14 +141,14 @@ struct PhotoCaptureView: View {
                 }
                 .padding(.horizontal)
 
-                // Selected photos preview
-                if !capturedPhotos.isEmpty {
+                // Selected media preview
+                if !capturedMedia.isEmpty {
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
-                            Text("Selected Photos")
+                            Text("Selected Media")
                                 .font(.headline)
                             Spacer()
-                            Text("\(capturedPhotos.count) photo\(capturedPhotos.count == 1 ? "" : "s")")
+                            Text(mediaCountText)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -122,9 +156,9 @@ struct PhotoCaptureView: View {
 
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 12) {
-                                ForEach(capturedPhotos) { photo in
-                                    PhotoThumbnail(photo: photo) {
-                                        capturedPhotos.removeAll { $0.id == photo.id }
+                                ForEach(capturedMedia) { media in
+                                    MediaThumbnail(media: media) {
+                                        capturedMedia.removeAll { $0.id == media.id }
                                     }
                                 }
                             }
@@ -137,14 +171,14 @@ struct PhotoCaptureView: View {
 
                 // Processing indicator
                 if isProcessing {
-                    ProgressView("Processing photos...")
+                    ProgressView("Processing media...")
                         .padding()
                 }
 
                 // Add button
-                if !capturedPhotos.isEmpty {
-                    Button(action: addPhotos) {
-                        Text("Add \(capturedPhotos.count) Photo\(capturedPhotos.count == 1 ? "" : "s")")
+                if !capturedMedia.isEmpty {
+                    Button(action: addMedia) {
+                        Text("Add \(capturedMedia.count) Item\(capturedMedia.count == 1 ? "" : "s")")
                             .font(.headline)
                             .frame(maxWidth: .infinity)
                             .padding()
@@ -156,7 +190,7 @@ struct PhotoCaptureView: View {
                     .padding(.bottom)
                 }
             }
-            .navigationTitle("Add Photos")
+            .navigationTitle("Add Media")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -165,36 +199,84 @@ struct PhotoCaptureView: View {
             }
             .fullScreenCover(isPresented: $showingCamera) {
                 CameraView { image, location in
-                    let photo = CapturedPhoto(
+                    let media = CapturedMedia(
                         image: image,
+                        videoURL: nil,
                         capturedAt: Date(),
-                        location: location
+                        location: location,
+                        mediaType: .photo
                     )
-                    capturedPhotos.append(photo)
+                    capturedMedia.append(media)
+                }
+            }
+            .fullScreenCover(isPresented: $showingVideoCamera) {
+                VideoCameraView { videoURL, location in
+                    let media = CapturedMedia(
+                        image: nil,
+                        videoURL: videoURL,
+                        capturedAt: Date(),
+                        location: location,
+                        mediaType: .video
+                    )
+                    capturedMedia.append(media)
                 }
             }
             .onChange(of: selectedItems) { _, newItems in
                 Task {
-                    await loadSelectedPhotos(newItems)
+                    await loadSelectedMedia(newItems)
                 }
             }
         }
     }
 
-    private func loadSelectedPhotos(_ items: [PhotosPickerItem]) async {
+    private var mediaCountText: String {
+        let photoCount = capturedMedia.filter { $0.mediaType == .photo }.count
+        let videoCount = capturedMedia.filter { $0.mediaType == .video }.count
+
+        var parts: [String] = []
+        if photoCount > 0 {
+            parts.append("\(photoCount) photo\(photoCount == 1 ? "" : "s")")
+        }
+        if videoCount > 0 {
+            parts.append("\(videoCount) video\(videoCount == 1 ? "" : "s")")
+        }
+        return parts.joined(separator: ", ")
+    }
+
+    private func loadSelectedMedia(_ items: [PhotosPickerItem]) async {
         isProcessing = true
         defer { isProcessing = false }
 
         for item in items {
+            // Try to load as video first
+            if item.supportedContentTypes.contains(where: { $0.conforms(to: .movie) }) {
+                if let videoURL = try? await item.loadTransferable(type: VideoTransferable.self)?.url {
+                    let media = CapturedMedia(
+                        image: nil,
+                        videoURL: videoURL,
+                        capturedAt: Date(),
+                        location: nil,
+                        mediaType: .video
+                    )
+                    await MainActor.run {
+                        capturedMedia.append(media)
+                    }
+                    continue
+                }
+            }
+
+            // Load as image
             if let data = try? await item.loadTransferable(type: Data.self),
                let image = UIImage(data: data) {
-                let photo = CapturedPhoto(
+                let media = CapturedMedia(
                     image: image,
+                    videoURL: nil,
                     capturedAt: Date(),
-                    location: nil
+                    location: nil,
+                    mediaType: .photo
                 )
                 await MainActor.run {
-                    capturedPhotos.append(photo)
+                    capturedMedia.append(media)
                 }
             }
         }
@@ -203,27 +285,65 @@ struct PhotoCaptureView: View {
         }
     }
 
-    private func addPhotos() {
-        for photo in capturedPhotos {
-            onPhotoCaptured(photo)
+    private func addMedia() {
+        for media in capturedMedia {
+            onPhotoCaptured(media)
         }
         dismiss()
     }
 }
 
-// MARK: - Captured Photo Model
+// MARK: - Video Transferable
 
-struct CapturedPhoto: Identifiable {
+struct VideoTransferable: Transferable {
+    let url: URL
+
+    static var transferRepresentation: some TransferRepresentation {
+        FileRepresentation(contentType: .movie) { video in
+            SentTransferredFile(video.url)
+        } importing: { received in
+            let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mp4")
+            try FileManager.default.copyItem(at: received.file, to: tempURL)
+            return Self(url: tempURL)
+        }
+    }
+}
+
+// MARK: - Captured Media Model
+
+struct CapturedMedia: Identifiable {
     let id = UUID()
-    let image: UIImage
+    let image: UIImage?
+    let videoURL: URL?
     let capturedAt: Date
     let location: CLLocation?
+    let mediaType: MediaType
 
-    var thumbnailImage: UIImage {
-        let size = CGSize(width: 150, height: 150)
-        let renderer = UIGraphicsImageRenderer(size: size)
-        return renderer.image { _ in
-            image.draw(in: CGRect(origin: .zero, size: size))
+    var thumbnailImage: UIImage? {
+        if let image = image {
+            let size = CGSize(width: 150, height: 150)
+            let renderer = UIGraphicsImageRenderer(size: size)
+            return renderer.image { _ in
+                image.draw(in: CGRect(origin: .zero, size: size))
+            }
+        } else if let videoURL = videoURL {
+            return generateVideoThumbnail(from: videoURL)
+        }
+        return nil
+    }
+
+    private func generateVideoThumbnail(from url: URL) -> UIImage? {
+        let asset = AVAsset(url: url)
+        let imageGenerator = AVAssetImageGenerator(asset: asset)
+        imageGenerator.appliesPreferredTrackTransform = true
+
+        let time = CMTime(seconds: 0.5, preferredTimescale: 600)
+
+        do {
+            let cgImage = try imageGenerator.copyCGImage(at: time, actualTime: nil)
+            return UIImage(cgImage: cgImage)
+        } catch {
+            return nil
         }
     }
 
@@ -235,7 +355,14 @@ struct CapturedPhoto: Identifiable {
             altitude: location?.altitude
         )
     }
+
+    var isVideo: Bool {
+        mediaType == .video
+    }
 }
+
+// For backwards compatibility
+typealias CapturedPhoto = CapturedMedia
 
 struct PhotoMetadata: Codable {
     let capturedAt: Date
@@ -244,19 +371,42 @@ struct PhotoMetadata: Codable {
     let altitude: Double?
 }
 
-// MARK: - Photo Thumbnail
+// MARK: - Media Thumbnail
 
-struct PhotoThumbnail: View {
-    let photo: CapturedPhoto
+struct MediaThumbnail: View {
+    let media: CapturedMedia
     let onDelete: () -> Void
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            Image(uiImage: photo.thumbnailImage)
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: 100, height: 100)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+            if let thumbnail = media.thumbnailImage {
+                ZStack {
+                    Image(uiImage: thumbnail)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 100, height: 100)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                    // Video indicator
+                    if media.isVideo {
+                        ZStack {
+                            Circle()
+                                .fill(.black.opacity(0.5))
+                                .frame(width: 36, height: 36)
+                            Image(systemName: "play.fill")
+                                .foregroundStyle(.white)
+                        }
+                    }
+                }
+            } else {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 100, height: 100)
+                    .overlay {
+                        Image(systemName: media.isVideo ? "video" : "photo")
+                            .foregroundStyle(.secondary)
+                    }
+            }
 
             Button(action: onDelete) {
                 Image(systemName: "xmark.circle.fill")
@@ -268,6 +418,9 @@ struct PhotoThumbnail: View {
         }
     }
 }
+
+// For backwards compatibility
+typealias PhotoThumbnail = MediaThumbnail
 
 // MARK: - Camera View
 
@@ -326,57 +479,155 @@ extension CameraView.Coordinator: CLLocationManagerDelegate {
     }
 }
 
+// MARK: - Video Camera View
+
+struct VideoCameraView: UIViewControllerRepresentable {
+    @Environment(\.dismiss) private var dismiss
+    let onCapture: (URL, CLLocation?) -> Void
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = .camera
+        picker.mediaTypes = [UTType.movie.identifier]
+        picker.videoQuality = .typeMedium
+        picker.videoMaximumDuration = 300 // 5 minutes max
+        picker.delegate = context.coordinator
+        picker.allowsEditing = false
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        let parent: VideoCameraView
+        let locationManager = CLLocationManager()
+        var currentLocation: CLLocation?
+
+        init(_ parent: VideoCameraView) {
+            self.parent = parent
+            super.init()
+            setupLocationManager()
+        }
+
+        private func setupLocationManager() {
+            locationManager.delegate = self
+            locationManager.desiredAccuracy = kCLLocationAccuracyBest
+            locationManager.requestWhenInUseAuthorization()
+            locationManager.startUpdatingLocation()
+        }
+
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+            if let videoURL = info[.mediaURL] as? URL {
+                // Copy to temp location so it persists
+                let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mp4")
+                try? FileManager.default.copyItem(at: videoURL, to: tempURL)
+                parent.onCapture(tempURL, currentLocation)
+            }
+            parent.dismiss()
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            parent.dismiss()
+        }
+    }
+}
+
+extension VideoCameraView.Coordinator: CLLocationManagerDelegate {
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        currentLocation = locations.last
+    }
+}
+
 // MARK: - Photo Gallery View
 
 struct PhotoGalleryView: View {
     let photos: [EvidencePhoto]
-    @State private var selectedPhoto: EvidencePhoto?
+    @State private var selectedMedia: EvidencePhoto?
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(photos) { photo in
-                    if let image = photo.loadImage() {
-                        Image(uiImage: image)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 80, height: 80)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                            .onTapGesture {
-                                selectedPhoto = photo
-                            }
+                    MediaGalleryItem(media: photo) {
+                        selectedMedia = photo
                     }
                 }
             }
         }
-        .sheet(item: $selectedPhoto) { photo in
-            PhotoDetailView(photo: photo)
+        .sheet(item: $selectedMedia) { media in
+            MediaDetailView(media: media)
         }
     }
 }
 
-// MARK: - Photo Detail View
+// MARK: - Media Gallery Item
 
-struct PhotoDetailView: View {
+struct MediaGalleryItem: View {
+    let media: EvidencePhoto
+    let onTap: () -> Void
+
+    var body: some View {
+        ZStack {
+            if let thumbnail = media.loadThumbnail() {
+                Image(uiImage: thumbnail)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: 80, height: 80)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            } else {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 80, height: 80)
+                    .overlay {
+                        Image(systemName: media.isVideo ? "video" : "photo")
+                            .foregroundStyle(.secondary)
+                    }
+            }
+
+            // Video indicator
+            if media.isVideo {
+                ZStack {
+                    Circle()
+                        .fill(.black.opacity(0.5))
+                        .frame(width: 30, height: 30)
+                    Image(systemName: "play.fill")
+                        .font(.caption)
+                        .foregroundStyle(.white)
+                }
+            }
+        }
+        .onTapGesture(perform: onTap)
+    }
+}
+
+// MARK: - Media Detail View
+
+struct MediaDetailView: View {
     @Environment(\.dismiss) private var dismiss
-    let photo: EvidencePhoto
+    let media: EvidencePhoto
 
     var body: some View {
         NavigationStack {
             VStack {
-                if let image = photo.loadImage() {
+                if media.isVideo {
+                    VideoPlayerView(media: media)
+                } else if let image = media.loadImage() {
                     Image(uiImage: image)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                 } else {
                     ContentUnavailableView(
-                        "Photo Unavailable",
-                        systemImage: "photo",
-                        description: Text("Unable to load this photo")
+                        "Media Unavailable",
+                        systemImage: media.isVideo ? "video.slash" : "photo",
+                        description: Text("Unable to load this \(media.isVideo ? "video" : "photo")")
                     )
                 }
             }
-            .navigationTitle("Photo")
+            .navigationTitle(media.isVideo ? "Video" : "Photo")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -384,18 +635,54 @@ struct PhotoDetailView: View {
                 }
             }
             .safeAreaInset(edge: .bottom) {
-                if let metadata = photo.metadata {
-                    PhotoMetadataBar(metadata: metadata)
+                if let metadata = media.metadata {
+                    MediaMetadataBar(metadata: metadata, isVideo: media.isVideo)
                 }
             }
         }
     }
 }
 
-// MARK: - Photo Metadata Bar
+// For backwards compatibility
+typealias PhotoDetailView = MediaDetailView
 
-struct PhotoMetadataBar: View {
+// MARK: - Video Player View
+
+struct VideoPlayerView: View {
+    let media: EvidencePhoto
+    @State private var player: AVPlayer?
+
+    var body: some View {
+        Group {
+            if let url = media.videoURL(), let player = player {
+                VideoPlayer(player: player)
+                    .onAppear {
+                        player.play()
+                    }
+                    .onDisappear {
+                        player.pause()
+                    }
+            } else {
+                ContentUnavailableView(
+                    "Video Unavailable",
+                    systemImage: "video.slash",
+                    description: Text("Unable to load this video")
+                )
+            }
+        }
+        .onAppear {
+            if let url = media.videoURL() {
+                player = AVPlayer(url: url)
+            }
+        }
+    }
+}
+
+// MARK: - Media Metadata Bar
+
+struct MediaMetadataBar: View {
     let metadata: PhotoMetadata
+    let isVideo: Bool
 
     var body: some View {
         HStack(spacing: 16) {
@@ -406,6 +693,18 @@ struct PhotoMetadataBar: View {
                 Image(systemName: "calendar")
             }
             .font(.caption)
+
+            if isVideo {
+                Divider()
+                    .frame(height: 20)
+
+                Label {
+                    Text("Video")
+                } icon: {
+                    Image(systemName: "video.fill")
+                }
+                .font(.caption)
+            }
 
             if let lat = metadata.latitude, let lon = metadata.longitude {
                 Divider()
@@ -422,6 +721,16 @@ struct PhotoMetadataBar: View {
         .padding()
         .frame(maxWidth: .infinity)
         .background(.ultraThinMaterial)
+    }
+}
+
+// MARK: - Photo Metadata Bar (backwards compatibility)
+
+struct PhotoMetadataBar: View {
+    let metadata: PhotoMetadata
+
+    var body: some View {
+        MediaMetadataBar(metadata: metadata, isVideo: false)
     }
 }
 

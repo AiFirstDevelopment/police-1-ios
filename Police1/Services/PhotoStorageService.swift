@@ -1,5 +1,13 @@
 import Foundation
 import UIKit
+import AVFoundation
+
+// MARK: - Media Type
+
+enum MediaType: String, Codable {
+    case photo
+    case video
+}
 
 // MARK: - Evidence Photo Model
 
@@ -8,12 +16,22 @@ struct EvidencePhoto: Identifiable, Codable, Equatable {
     let fileName: String
     let capturedAt: Date
     let metadata: PhotoMetadata?
+    let mediaType: MediaType
 
-    init(id: UUID = UUID(), fileName: String, capturedAt: Date, metadata: PhotoMetadata? = nil) {
+    init(id: UUID = UUID(), fileName: String, capturedAt: Date, metadata: PhotoMetadata? = nil, mediaType: MediaType = .photo) {
         self.id = id
         self.fileName = fileName
         self.capturedAt = capturedAt
         self.metadata = metadata
+        self.mediaType = mediaType
+    }
+
+    var isVideo: Bool {
+        mediaType == .video
+    }
+
+    var isPhoto: Bool {
+        mediaType == .photo
     }
 
     func loadImage() -> UIImage? {
@@ -22,6 +40,11 @@ struct EvidencePhoto: Identifiable, Codable, Equatable {
 
     func loadThumbnail() -> UIImage? {
         PhotoStorageService.shared.loadThumbnail(fileName: fileName)
+    }
+
+    func videoURL() -> URL? {
+        guard isVideo else { return nil }
+        return PhotoStorageService.shared.videoURL(fileName: fileName)
     }
 
     static func == (lhs: EvidencePhoto, rhs: EvidencePhoto) -> Bool {
@@ -37,11 +60,13 @@ final class PhotoStorageService {
     private let fileManager = FileManager.default
     private let photosDirectory: URL
     private let thumbnailsDirectory: URL
+    private let videosDirectory: URL
 
     private init() {
         let documentsPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
         photosDirectory = documentsPath.appendingPathComponent("EvidencePhotos", isDirectory: true)
         thumbnailsDirectory = documentsPath.appendingPathComponent("EvidenceThumbnails", isDirectory: true)
+        videosDirectory = documentsPath.appendingPathComponent("EvidenceVideos", isDirectory: true)
 
         createDirectoriesIfNeeded()
     }
@@ -49,6 +74,7 @@ final class PhotoStorageService {
     private func createDirectoriesIfNeeded() {
         try? fileManager.createDirectory(at: photosDirectory, withIntermediateDirectories: true)
         try? fileManager.createDirectory(at: thumbnailsDirectory, withIntermediateDirectories: true)
+        try? fileManager.createDirectory(at: videosDirectory, withIntermediateDirectories: true)
     }
 
     // MARK: - Save Photo
@@ -91,6 +117,51 @@ final class PhotoStorageService {
         }
     }
 
+    // MARK: - Save Video
+
+    func saveVideo(_ videoURL: URL, metadata: PhotoMetadata?) -> EvidencePhoto? {
+        let id = UUID()
+        let fileName = "\(id.uuidString).mp4"
+        let destinationURL = videosDirectory.appendingPathComponent(fileName)
+
+        do {
+            try fileManager.copyItem(at: videoURL, to: destinationURL)
+
+            // Generate thumbnail from video
+            if let thumbnail = generateVideoThumbnail(from: destinationURL) {
+                let thumbnailFileName = "\(id.uuidString).jpg"
+                saveThumbnail(thumbnail, fileName: thumbnailFileName)
+            }
+
+            return EvidencePhoto(
+                id: id,
+                fileName: fileName,
+                capturedAt: metadata?.capturedAt ?? Date(),
+                metadata: metadata,
+                mediaType: .video
+            )
+        } catch {
+            print("Failed to save video: \(error)")
+            return nil
+        }
+    }
+
+    private func generateVideoThumbnail(from url: URL) -> UIImage? {
+        let asset = AVAsset(url: url)
+        let imageGenerator = AVAssetImageGenerator(asset: asset)
+        imageGenerator.appliesPreferredTrackTransform = true
+
+        let time = CMTime(seconds: 0.5, preferredTimescale: 600)
+
+        do {
+            let cgImage = try imageGenerator.copyCGImage(at: time, actualTime: nil)
+            return UIImage(cgImage: cgImage)
+        } catch {
+            print("Failed to generate video thumbnail: \(error)")
+            return nil
+        }
+    }
+
     // MARK: - Load Photo
 
     func loadImage(fileName: String) -> UIImage? {
@@ -102,12 +173,22 @@ final class PhotoStorageService {
     }
 
     func loadThumbnail(fileName: String) -> UIImage? {
-        let thumbnailURL = thumbnailsDirectory.appendingPathComponent(fileName)
+        // For videos, thumbnail has .jpg extension
+        let thumbnailFileName = fileName.replacingOccurrences(of: ".mp4", with: ".jpg")
+        let thumbnailURL = thumbnailsDirectory.appendingPathComponent(thumbnailFileName)
         if let data = try? Data(contentsOf: thumbnailURL) {
             return UIImage(data: data)
         }
-        // Fallback to full image if thumbnail doesn't exist
+        // Fallback to full image if thumbnail doesn't exist (for photos)
         return loadImage(fileName: fileName)
+    }
+
+    func videoURL(fileName: String) -> URL? {
+        let fileURL = videosDirectory.appendingPathComponent(fileName)
+        guard fileManager.fileExists(atPath: fileURL.path) else {
+            return nil
+        }
+        return fileURL
     }
 
     // MARK: - Delete Photo
@@ -120,16 +201,33 @@ final class PhotoStorageService {
         try? fileManager.removeItem(at: thumbnailURL)
     }
 
+    func deleteVideo(fileName: String) {
+        let fileURL = videosDirectory.appendingPathComponent(fileName)
+        let thumbnailFileName = fileName.replacingOccurrences(of: ".mp4", with: ".jpg")
+        let thumbnailURL = thumbnailsDirectory.appendingPathComponent(thumbnailFileName)
+
+        try? fileManager.removeItem(at: fileURL)
+        try? fileManager.removeItem(at: thumbnailURL)
+    }
+
+    func deleteMedia(_ media: EvidencePhoto) {
+        if media.isVideo {
+            deleteVideo(fileName: media.fileName)
+        } else {
+            deletePhoto(fileName: media.fileName)
+        }
+    }
+
     func deletePhotos(_ photos: [EvidencePhoto]) {
         for photo in photos {
-            deletePhoto(fileName: photo.fileName)
+            deleteMedia(photo)
         }
     }
 
     // MARK: - Storage Info
 
     var totalStorageUsed: Int64 {
-        calculateDirectorySize(photosDirectory) + calculateDirectorySize(thumbnailsDirectory)
+        calculateDirectorySize(photosDirectory) + calculateDirectorySize(thumbnailsDirectory) + calculateDirectorySize(videosDirectory)
     }
 
     var formattedStorageUsed: String {
@@ -155,6 +253,7 @@ final class PhotoStorageService {
     func clearAllPhotos() {
         try? fileManager.removeItem(at: photosDirectory)
         try? fileManager.removeItem(at: thumbnailsDirectory)
+        try? fileManager.removeItem(at: videosDirectory)
         createDirectoriesIfNeeded()
     }
 }

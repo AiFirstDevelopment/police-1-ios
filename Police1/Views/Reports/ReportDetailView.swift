@@ -406,43 +406,45 @@ struct ReportDetailView: View {
             let generatedDate = "Generated: \(dateFormatter.string(from: Date()))"
             generatedDate.draw(at: CGPoint(x: margin, y: yPosition), withAttributes: bodyAttributes)
 
-            // Evidence Photos - add on new pages
-            let allPhotos = report.evidence.flatMap { $0.photos }
-            if !allPhotos.isEmpty {
+            // Evidence Media - add on new pages
+            let allMedia = report.evidence.flatMap { $0.photos }
+            if !allMedia.isEmpty {
                 context.beginPage()
                 yPosition = margin
 
-                "Evidence Photos".draw(at: CGPoint(x: margin, y: yPosition), withAttributes: titleAttributes)
+                "Evidence Media".draw(at: CGPoint(x: margin, y: yPosition), withAttributes: titleAttributes)
                 yPosition += 50
 
-                let photoSize: CGFloat = 200
-                let photosPerRow = 2
-                var photoIndex = 0
+                let mediaSize: CGFloat = 200
+                let mediaPerRow = 2
+                var mediaIndex = 0
 
-                for photo in allPhotos {
-                    if let image = photo.loadImage() {
-                        let col = photoIndex % photosPerRow
-                        let row = photoIndex / photosPerRow
+                for media in allMedia {
+                    // For videos, use thumbnail; for photos, use full image
+                    if let image = media.isVideo ? media.loadThumbnail() : media.loadImage() {
+                        let col = mediaIndex % mediaPerRow
+                        let row = mediaIndex / mediaPerRow
 
-                        let xPos = margin + CGFloat(col) * (photoSize + 20)
-                        let yPos = yPosition + CGFloat(row) * (photoSize + 40)
+                        let xPos = margin + CGFloat(col) * (mediaSize + 20)
+                        let yPos = yPosition + CGFloat(row) * (mediaSize + 40)
 
                         // Check if we need a new page
-                        if yPos + photoSize > pageHeight - margin {
+                        if yPos + mediaSize > pageHeight - margin {
                             context.beginPage()
                             yPosition = margin
-                            photoIndex = 0
+                            mediaIndex = 0
                             continue
                         }
 
-                        let photoRect = CGRect(x: xPos, y: yPos, width: photoSize, height: photoSize)
-                        image.draw(in: photoRect)
+                        let mediaRect = CGRect(x: xPos, y: yPos, width: mediaSize, height: mediaSize)
+                        image.draw(in: mediaRect)
 
                         // Draw caption
-                        let captionY = yPos + photoSize + 5
-                        "Photo \(photoIndex + 1)".draw(at: CGPoint(x: xPos, y: captionY), withAttributes: bodyAttributes)
+                        let captionY = yPos + mediaSize + 5
+                        let caption = media.isVideo ? "Video \(mediaIndex + 1)" : "Photo \(mediaIndex + 1)"
+                        caption.draw(at: CGPoint(x: xPos, y: captionY), withAttributes: bodyAttributes)
 
-                        photoIndex += 1
+                        mediaIndex += 1
                     }
                 }
             }
@@ -525,7 +527,15 @@ struct PersonRow: View {
 
 struct EvidenceRow: View {
     let item: EvidenceItem
-    @State private var showingPhotos = false
+    @State private var showingMedia = false
+
+    private var photoCount: Int {
+        item.photos.filter { $0.isPhoto }.count + item.photoUrls.count
+    }
+
+    private var videoCount: Int {
+        item.photos.filter { $0.isVideo }.count
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -543,16 +553,29 @@ struct EvidenceRow: View {
                         Text(item.type.rawValue)
                             .font(.body.weight(.medium))
 
-                        if item.hasPhotos {
+                        if photoCount > 0 {
                             HStack(spacing: 2) {
                                 Image(systemName: "photo.fill")
-                                Text("\(item.photoCount)")
+                                Text("\(photoCount)")
                             }
                             .font(.caption2)
                             .foregroundStyle(.blue)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
                             .background(Color.blue.opacity(0.1))
+                            .clipShape(Capsule())
+                        }
+
+                        if videoCount > 0 {
+                            HStack(spacing: 2) {
+                                Image(systemName: "video.fill")
+                                Text("\(videoCount)")
+                            }
+                            .font(.caption2)
+                            .foregroundStyle(.red)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.red.opacity(0.1))
                             .clipShape(Capsule())
                         }
                     }
@@ -565,19 +588,19 @@ struct EvidenceRow: View {
                 Spacer()
 
                 if item.hasPhotos {
-                    Button(action: { showingPhotos.toggle() }) {
-                        Image(systemName: showingPhotos ? "chevron.up" : "chevron.down")
+                    Button(action: { showingMedia.toggle() }) {
+                        Image(systemName: showingMedia ? "chevron.up" : "chevron.down")
                             .foregroundStyle(.secondary)
                     }
                 }
             }
 
-            // Photo gallery
-            if showingPhotos && !item.photos.isEmpty {
+            // Media gallery
+            if showingMedia && !item.photos.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
-                        ForEach(item.photos) { photo in
-                            EvidencePhotoView(photo: photo)
+                        ForEach(item.photos) { media in
+                            EvidenceMediaView(media: media)
                         }
                     }
                 }
@@ -589,38 +612,54 @@ struct EvidenceRow: View {
     }
 }
 
-// MARK: - Evidence Photo View
+// MARK: - Evidence Media View
 
-struct EvidencePhotoView: View {
-    let photo: EvidencePhoto
+struct EvidenceMediaView: View {
+    let media: EvidencePhoto
     @State private var showingFullScreen = false
 
     var body: some View {
         Group {
-            if let thumbnail = photo.loadThumbnail() {
-                Image(uiImage: thumbnail)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: 100, height: 100)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .onTapGesture {
-                        showingFullScreen = true
+            ZStack {
+                if let thumbnail = media.loadThumbnail() {
+                    Image(uiImage: thumbnail)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 100, height: 100)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                } else {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: 100, height: 100)
+                        .overlay {
+                            Image(systemName: media.isVideo ? "video" : "photo")
+                                .foregroundStyle(.secondary)
+                        }
+                }
+
+                // Video indicator
+                if media.isVideo {
+                    ZStack {
+                        Circle()
+                            .fill(.black.opacity(0.5))
+                            .frame(width: 36, height: 36)
+                        Image(systemName: "play.fill")
+                            .foregroundStyle(.white)
                     }
-            } else {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.gray.opacity(0.3))
-                    .frame(width: 100, height: 100)
-                    .overlay {
-                        Image(systemName: "photo")
-                            .foregroundStyle(.secondary)
-                    }
+                }
+            }
+            .onTapGesture {
+                showingFullScreen = true
             }
         }
         .sheet(isPresented: $showingFullScreen) {
-            PhotoDetailView(photo: photo)
+            MediaDetailView(media: media)
         }
     }
 }
+
+// For backwards compatibility
+typealias EvidencePhotoView = EvidenceMediaView
 
 // MARK: - Share Sheet
 
