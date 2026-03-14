@@ -84,13 +84,17 @@ final class PhotoStorageService {
         let fileName = "\(id.uuidString).jpg"
 
         guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+            print("[PhotoStorage] Failed to create JPEG data")
             return nil
         }
 
         let fileURL = photosDirectory.appendingPathComponent(fileName)
+        print("[PhotoStorage] Saving photo to: \(fileURL.path)")
 
         do {
             try imageData.write(to: fileURL)
+            print("[PhotoStorage] Photo saved successfully: \(fileName)")
+            print("[PhotoStorage] File exists after save: \(fileManager.fileExists(atPath: fileURL.path))")
             saveThumbnail(image, fileName: fileName)
             return EvidencePhoto(
                 id: id,
@@ -99,7 +103,7 @@ final class PhotoStorageService {
                 metadata: metadata
             )
         } catch {
-            print("Failed to save photo: \(error)")
+            print("[PhotoStorage] Failed to save photo: \(error)")
             return nil
         }
     }
@@ -166,10 +170,15 @@ final class PhotoStorageService {
 
     func loadImage(fileName: String) -> UIImage? {
         let fileURL = photosDirectory.appendingPathComponent(fileName)
+        print("[PhotoStorage] Loading image from: \(fileURL.path)")
+        print("[PhotoStorage] File exists: \(fileManager.fileExists(atPath: fileURL.path))")
         guard let data = try? Data(contentsOf: fileURL) else {
+            print("[PhotoStorage] Failed to load data from file")
             return nil
         }
-        return UIImage(data: data)
+        let image = UIImage(data: data)
+        print("[PhotoStorage] Loaded image: \(image != nil ? "success" : "nil")")
+        return image
     }
 
     func loadThumbnail(fileName: String) -> UIImage? {

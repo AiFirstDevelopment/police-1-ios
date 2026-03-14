@@ -415,11 +415,12 @@ struct ReportDetailView: View {
 
             // Evidence Media - add on new pages
             let allMedia = report.evidence.flatMap { $0.photos }
+            print("[PDF] Found \(allMedia.count) media items in \(report.evidence.count) evidence items")
             if !allMedia.isEmpty {
                 context.beginPage()
                 yPosition = margin
 
-                "Evidence Media".draw(at: CGPoint(x: margin, y: yPosition), withAttributes: titleAttributes)
+                "Evidence Media (\(allMedia.count) items)".draw(at: CGPoint(x: margin, y: yPosition), withAttributes: titleAttributes)
                 yPosition += 50
 
                 let mediaSize: CGFloat = 200
@@ -427,32 +428,48 @@ struct ReportDetailView: View {
                 var mediaIndex = 0
 
                 for media in allMedia {
+                    print("[PDF] Loading media: \(media.fileName), isVideo: \(media.isVideo)")
+
+                    let col = mediaIndex % mediaPerRow
+                    let row = mediaIndex / mediaPerRow
+
+                    let xPos = margin + CGFloat(col) * (mediaSize + 20)
+                    let yPos = yPosition + CGFloat(row) * (mediaSize + 40)
+
+                    // Check if we need a new page
+                    if yPos + mediaSize > pageHeight - margin {
+                        context.beginPage()
+                        yPosition = margin
+                        mediaIndex = 0
+                        continue
+                    }
+
+                    let mediaRect = CGRect(x: xPos, y: yPos, width: mediaSize, height: mediaSize)
+
                     // For videos, use thumbnail; for photos, use full image
                     if let image = media.isVideo ? media.loadThumbnail() : media.loadImage() {
-                        let col = mediaIndex % mediaPerRow
-                        let row = mediaIndex / mediaPerRow
-
-                        let xPos = margin + CGFloat(col) * (mediaSize + 20)
-                        let yPos = yPosition + CGFloat(row) * (mediaSize + 40)
-
-                        // Check if we need a new page
-                        if yPos + mediaSize > pageHeight - margin {
-                            context.beginPage()
-                            yPosition = margin
-                            mediaIndex = 0
-                            continue
-                        }
-
-                        let mediaRect = CGRect(x: xPos, y: yPos, width: mediaSize, height: mediaSize)
+                        print("[PDF] Successfully loaded image for: \(media.fileName)")
                         image.draw(in: mediaRect)
-
-                        // Draw caption
-                        let captionY = yPos + mediaSize + 5
-                        let caption = media.isVideo ? "Video \(mediaIndex + 1)" : "Photo \(mediaIndex + 1)"
-                        caption.draw(at: CGPoint(x: xPos, y: captionY), withAttributes: bodyAttributes)
-
-                        mediaIndex += 1
+                    } else {
+                        // Draw placeholder for missing image
+                        print("[PDF] Failed to load image for: \(media.fileName)")
+                        UIColor.lightGray.setFill()
+                        UIBezierPath(roundedRect: mediaRect, cornerRadius: 8).fill()
+                        let placeholder = "Image not found"
+                        let placeholderAttrs: [NSAttributedString.Key: Any] = [
+                            .font: UIFont.systemFont(ofSize: 12),
+                            .foregroundColor: UIColor.darkGray
+                        ]
+                        let placeholderRect = CGRect(x: xPos + 50, y: yPos + 90, width: 100, height: 20)
+                        placeholder.draw(in: placeholderRect, withAttributes: placeholderAttrs)
                     }
+
+                    // Draw caption
+                    let captionY = yPos + mediaSize + 5
+                    let caption = media.isVideo ? "Video \(mediaIndex + 1)" : "Photo \(mediaIndex + 1)"
+                    caption.draw(at: CGPoint(x: xPos, y: captionY), withAttributes: bodyAttributes)
+
+                    mediaIndex += 1
                 }
             }
         }

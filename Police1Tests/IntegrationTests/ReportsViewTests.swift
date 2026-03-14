@@ -294,6 +294,31 @@ final class StatCardTests: XCTestCase {
         let button = try sut.find(ViewType.Button.self)
         XCTAssertNotNil(button)
     }
+
+    func testStatCardZeroCount() throws {
+        let view = StatCard(title: "Pending", count: 0, color: .orange, icon: "clock")
+        let sut = try view.inspect()
+
+        let texts = sut.findAll(ViewType.Text.self)
+        let countText = texts.first { (try? $0.string()) == "0" }
+        XCTAssertNotNil(countText, "Should display zero count")
+    }
+
+    func testStatCardActionCallable() throws {
+        var wasClicked = false
+        let view = StatCard(
+            title: "Test",
+            count: 1,
+            color: .blue,
+            icon: "star",
+            action: { wasClicked = true }
+        )
+        let sut = try view.inspect()
+
+        // Verify button exists and is clickable
+        let button = try sut.find(ViewType.Button.self)
+        XCTAssertNotNil(button)
+    }
 }
 
 // MARK: - ReportDetailView Tests

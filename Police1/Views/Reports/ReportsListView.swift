@@ -14,8 +14,6 @@ struct ReportsListView: View {
             ZStack {
                 if isLoading {
                     ProgressView("Loading reports...")
-                } else if filteredReports.isEmpty {
-                    emptyState
                 } else {
                     reportsList
                 }
@@ -51,6 +49,8 @@ struct ReportsListView: View {
             }
             .task {
                 _ = try? await reportService.fetchReports()
+                // Auto-sync when online to get official case numbers
+                try? await reportService.syncReports()
                 isLoading = false
             }
         }
@@ -60,26 +60,60 @@ struct ReportsListView: View {
 
     private var reportsList: some View {
         List {
-            // Stats header
+            // Stats header - always visible
             statsHeader
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets())
 
-            // Reports grouped by date
-            ForEach(groupedReports.keys.sorted().reversed(), id: \.self) { date in
-                Section(header: Text(formatSectionDate(date))) {
-                    ForEach(groupedReports[date] ?? []) { report in
-                        NavigationLink(destination: ReportDetailView(report: report, reportService: reportService)) {
-                            ReportRowView(report: report)
+            if filteredReports.isEmpty {
+                // Empty state within the list
+                Section {
+                    VStack(spacing: 16) {
+                        Image(systemName: "doc.text")
+                            .font(.system(size: 50))
+                            .foregroundStyle(.secondary)
+                        Text("No Reports")
+                            .font(.headline)
+                        Text(emptyStateMessage)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                        Button("New Report") {
+                            showingNewReport = true
                         }
+                        .buttonStyle(.borderedProminent)
                     }
-                    .onDelete { indexSet in
-                        deleteReports(at: indexSet, from: date)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 40)
+                }
+                .listRowBackground(Color.clear)
+            } else {
+                // Reports grouped by date
+                ForEach(groupedReports.keys.sorted().reversed(), id: \.self) { date in
+                    Section(header: Text(formatSectionDate(date))) {
+                        ForEach(groupedReports[date] ?? []) { report in
+                            NavigationLink(destination: ReportDetailView(report: report, reportService: reportService)) {
+                                ReportRowView(report: report)
+                            }
+                        }
+                        .onDelete { indexSet in
+                            deleteReports(at: indexSet, from: date)
+                        }
                     }
                 }
             }
         }
         .listStyle(.insetGrouped)
+    }
+
+    private var emptyStateMessage: String {
+        if selectedFilter != .all {
+            return "No \(selectedFilter.rawValue.lowercased()) reports found"
+        } else if !searchText.isEmpty {
+            return "No reports match '\(searchText)'"
+        } else {
+            return "Tap + to create your first report"
+        }
     }
 
     // MARK: - Stats Header
@@ -122,27 +156,6 @@ struct ReportsListView: View {
             }
             .padding(.horizontal)
             .padding(.vertical, 8)
-        }
-    }
-
-    // MARK: - Empty State
-
-    private var emptyState: some View {
-        ContentUnavailableView {
-            Label("No Reports", systemImage: "doc.text")
-        } description: {
-            if selectedFilter != .all {
-                Text("No \(selectedFilter.rawValue.lowercased()) reports found")
-            } else if !searchText.isEmpty {
-                Text("No reports match '\(searchText)'")
-            } else {
-                Text("Tap + to create your first report")
-            }
-        } actions: {
-            Button("New Report") {
-                showingNewReport = true
-            }
-            .buttonStyle(.borderedProminent)
         }
     }
 
