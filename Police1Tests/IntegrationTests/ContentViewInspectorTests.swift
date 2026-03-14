@@ -36,14 +36,14 @@ final class ContentViewInspectorTests: XCTestCase {
         XCTAssertNotNil(buttonText)
     }
 
-    func testContentViewHasShieldIcon() throws {
+    func testContentViewHasBadgeIcon() throws {
         let sut = ContentView()
 
-        // Find the shield SF Symbol
+        // Find the badge icon image
         let image = try sut.inspect().find(ViewType.Image.self) { view in
-            // Check if it's a system image named "shield.fill"
+            // Check if it's the BadgeIcon asset
             let name = try? view.actualImage().name()
-            return name == "shield.fill"
+            return name == "BadgeIcon"
         }
         XCTAssertNotNil(image)
     }

@@ -63,18 +63,12 @@ struct EnrollmentView: View {
 
     private var headerSection: some View {
         VStack(spacing: 16) {
-            // Shield with badge icon
-            ZStack {
-                Image(systemName: "shield.fill")
-                    .font(.system(size: 80))
-                    .foregroundStyle(.white.opacity(0.9))
-                    .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 5)
-
-                Image(systemName: "star.fill")
-                    .font(.system(size: 24))
-                    .foregroundStyle(.yellow)
-                    .offset(y: 5)
-            }
+            // Badge icon
+            Image("BadgeIcon")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 100, height: 100)
+                .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 5)
 
             Text("Police 1")
                 .font(.system(size: 36, weight: .bold, design: .rounded))

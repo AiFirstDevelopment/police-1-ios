@@ -68,9 +68,10 @@ struct RootView: View {
             .ignoresSafeArea()
 
             VStack(spacing: 20) {
-                Image(systemName: "shield.fill")
-                    .font(.system(size: 60))
-                    .foregroundStyle(.white)
+                Image("BadgeIcon")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 80, height: 80)
 
                 ProgressView()
                     .progressViewStyle(CircularProgressViewStyle(tint: .white))

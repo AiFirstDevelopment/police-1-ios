@@ -14,10 +14,11 @@ struct ContentView: View {
             VStack(spacing: 24) {
                 Spacer()
 
-                // App icon placeholder
-                Image(systemName: "shield.fill")
-                    .font(.system(size: 80))
-                    .foregroundStyle(.white)
+                // App badge icon
+                Image("BadgeIcon")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 100, height: 100)
                     .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 5)
 
                 Text("Police 1")

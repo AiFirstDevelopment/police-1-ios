@@ -64,9 +64,10 @@ struct LoginView: View {
 
     private var logoSection: some View {
         VStack(spacing: 16) {
-            Image(systemName: "shield.fill")
-                .font(.system(size: 70))
-                .foregroundStyle(.white)
+            Image("BadgeIcon")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 90, height: 90)
                 .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 5)
 
             Text("Police 1")
