@@ -344,6 +344,37 @@ struct ReportEditorView: View {
 
     private func saveReport() {
         isSaving = true
+
+        // Save captured media to storage and add to report
+        var savedPhotos: [EvidencePhoto] = []
+        for media in capturedMedia {
+            if media.isVideo, let videoURL = media.videoURL {
+                if let savedMedia = PhotoStorageService.shared.saveVideo(videoURL, metadata: media.metadata) {
+                    savedPhotos.append(savedMedia)
+                }
+            } else if let image = media.image {
+                if let savedMedia = PhotoStorageService.shared.savePhoto(image, metadata: media.metadata) {
+                    savedPhotos.append(savedMedia)
+                }
+            }
+        }
+
+        // Add saved photos to report evidence (create a general evidence item if needed)
+        if !savedPhotos.isEmpty {
+            if report.evidence.isEmpty {
+                // Create a general evidence item for the photos
+                let evidenceItem = EvidenceItem(
+                    type: .other,
+                    description: "Evidence photos and videos",
+                    photos: savedPhotos
+                )
+                report.evidence.append(evidenceItem)
+            } else {
+                // Add to the first evidence item
+                report.evidence[0].photos.append(contentsOf: savedPhotos)
+            }
+        }
+
         Task {
             do {
                 _ = try await reportService.saveReport(report)
