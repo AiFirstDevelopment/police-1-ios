@@ -255,7 +255,7 @@ struct ReportRowView: View {
                 HStack(spacing: 4) {
                     Text(report.displayCaseNumber)
                     if !report.hasOfficialCaseNumber {
-                        Text("(Pending)")
+                        Image(systemName: "clock")
                             .foregroundStyle(.orange)
                     }
                 }

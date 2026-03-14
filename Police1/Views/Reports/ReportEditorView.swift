@@ -119,7 +119,7 @@ struct ReportEditorView: View {
                 HStack(spacing: 4) {
                     Text(report.displayCaseNumber)
                     if !report.hasOfficialCaseNumber {
-                        Text("(Pending)")
+                        Image(systemName: "clock")
                             .font(.caption)
                             .foregroundStyle(.orange)
                     }

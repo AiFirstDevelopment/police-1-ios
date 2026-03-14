@@ -75,14 +75,6 @@ struct ReportDetailView: View {
                             activeSheet = .share(data)
                         }
                     } label: {
-                        Label("Export PDF", systemImage: "arrow.down.doc")
-                    }
-
-                    Button {
-                        if let data = generatePDF() {
-                            activeSheet = .share(data)
-                        }
-                    } label: {
                         Label("Share", systemImage: "square.and.arrow.up")
                     }
 
@@ -135,7 +127,8 @@ struct ReportDetailView: View {
                     HStack(spacing: 4) {
                         Text(report.displayCaseNumber)
                         if !report.hasOfficialCaseNumber {
-                            Text("(Pending)")
+                            Image(systemName: "clock")
+                                .font(.caption)
                                 .foregroundStyle(.orange)
                         }
                     }
@@ -412,6 +405,47 @@ struct ReportDetailView: View {
 
             let generatedDate = "Generated: \(dateFormatter.string(from: Date()))"
             generatedDate.draw(at: CGPoint(x: margin, y: yPosition), withAttributes: bodyAttributes)
+
+            // Evidence Photos - add on new pages
+            let allPhotos = report.evidence.flatMap { $0.photos }
+            if !allPhotos.isEmpty {
+                context.beginPage()
+                yPosition = margin
+
+                "Evidence Photos".draw(at: CGPoint(x: margin, y: yPosition), withAttributes: titleAttributes)
+                yPosition += 50
+
+                let photoSize: CGFloat = 200
+                let photosPerRow = 2
+                var photoIndex = 0
+
+                for photo in allPhotos {
+                    if let image = photo.loadImage() {
+                        let col = photoIndex % photosPerRow
+                        let row = photoIndex / photosPerRow
+
+                        let xPos = margin + CGFloat(col) * (photoSize + 20)
+                        let yPos = yPosition + CGFloat(row) * (photoSize + 40)
+
+                        // Check if we need a new page
+                        if yPos + photoSize > pageHeight - margin {
+                            context.beginPage()
+                            yPosition = margin
+                            photoIndex = 0
+                            continue
+                        }
+
+                        let photoRect = CGRect(x: xPos, y: yPos, width: photoSize, height: photoSize)
+                        image.draw(in: photoRect)
+
+                        // Draw caption
+                        let captionY = yPos + photoSize + 5
+                        "Photo \(photoIndex + 1)".draw(at: CGPoint(x: xPos, y: captionY), withAttributes: bodyAttributes)
+
+                        photoIndex += 1
+                    }
+                }
+            }
         }
 
         return data
