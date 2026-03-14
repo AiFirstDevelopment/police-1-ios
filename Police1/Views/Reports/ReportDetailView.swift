@@ -91,7 +91,14 @@ struct ReportDetailView: View {
                 }
             }
         }
-        .sheet(item: $activeSheet) { sheet in
+        .sheet(item: $activeSheet, onDismiss: {
+            // Refresh report after editing to get updated photos
+            Task {
+                if let updatedReport = try? await reportService.fetchReport(id: report.id) {
+                    report = updatedReport
+                }
+            }
+        }) { sheet in
             switch sheet {
             case .editor:
                 ReportEditorView(report: report, reportService: reportService)

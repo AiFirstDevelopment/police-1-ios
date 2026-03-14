@@ -91,25 +91,33 @@ struct ReportsListView: View {
                     title: "Draft",
                     count: reportService.reports.filter { $0.status == .draft }.count,
                     color: .gray,
-                    icon: "pencil"
+                    icon: "pencil",
+                    isSelected: selectedFilter == .drafts,
+                    action: { selectedFilter = selectedFilter == .drafts ? .all : .drafts }
                 )
                 StatCard(
                     title: "Pending",
                     count: reportService.reports.filter { $0.status == .pending }.count,
                     color: .orange,
-                    icon: "clock"
+                    icon: "clock",
+                    isSelected: selectedFilter == .pending,
+                    action: { selectedFilter = selectedFilter == .pending ? .all : .pending }
                 )
                 StatCard(
                     title: "Approved",
                     count: reportService.reports.filter { $0.status == .approved }.count,
                     color: .green,
-                    icon: "checkmark.circle"
+                    icon: "checkmark.circle",
+                    isSelected: selectedFilter == .approved,
+                    action: { selectedFilter = selectedFilter == .approved ? .all : .approved }
                 )
                 StatCard(
                     title: "Local",
                     count: reportService.reports.filter { $0.syncStatus == .local }.count,
                     color: .blue,
-                    icon: "icloud.slash"
+                    icon: "icloud.slash",
+                    isSelected: selectedFilter == .needsSync,
+                    action: { selectedFilter = selectedFilter == .needsSync ? .all : .needsSync }
                 )
             }
             .padding(.horizontal)
@@ -330,24 +338,34 @@ struct StatCard: View {
     let count: Int
     let color: Color
     let icon: String
+    var isSelected: Bool = false
+    var action: (() -> Void)? = nil
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Image(systemName: icon)
-                    .font(.caption)
-                Text(title)
-                    .font(.caption)
-            }
-            .foregroundStyle(color)
+        Button(action: { action?() }) {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Image(systemName: icon)
+                        .font(.caption)
+                    Text(title)
+                        .font(.caption)
+                }
+                .foregroundStyle(color)
 
-            Text("\(count)")
-                .font(.title2.weight(.bold))
+                Text("\(count)")
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(.primary)
+            }
+            .frame(minWidth: 80)
+            .padding()
+            .background(color.opacity(isSelected ? 0.25 : 0.1))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(isSelected ? color : .clear, lineWidth: 2)
+            )
         }
-        .frame(minWidth: 80)
-        .padding()
-        .background(color.opacity(0.1))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .buttonStyle(.plain)
     }
 }
 

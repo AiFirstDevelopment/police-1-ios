@@ -1,4 +1,28 @@
 import Foundation
+import Network
+
+// MARK: - Network Monitor
+
+final class NetworkMonitor: ObservableObject {
+    static let shared = NetworkMonitor()
+
+    @Published private(set) var isConnected = true
+    private let monitor = NWPathMonitor()
+    private let queue = DispatchQueue(label: "NetworkMonitor")
+
+    private init() {
+        monitor.pathUpdateHandler = { [weak self] path in
+            DispatchQueue.main.async {
+                self?.isConnected = path.status == .satisfied
+            }
+        }
+        monitor.start(queue: queue)
+    }
+
+    deinit {
+        monitor.cancel()
+    }
+}
 
 // MARK: - Report Service Protocol
 
@@ -16,6 +40,8 @@ protocol ReportServiceProtocol {
 final class MockReportService: ReportServiceProtocol, ObservableObject {
     @Published private(set) var reports: [Report] = []
     @Published private(set) var isSyncing = false
+
+    private let networkMonitor = NetworkMonitor.shared
 
     private let officerId: String
     private let officerName: String
@@ -53,7 +79,30 @@ final class MockReportService: ReportServiceProtocol, ObservableObject {
         // Auto-save simulation
         try await Task.sleep(nanoseconds: 100_000_000)
 
+        // Auto-sync if online - get official case number immediately
+        if networkMonitor.isConnected {
+            try? await syncReport(id: updatedReport.id)
+            if let index = reports.firstIndex(where: { $0.id == updatedReport.id }) {
+                return reports[index]
+            }
+        }
+
         return updatedReport
+    }
+
+    /// Sync a single report to get an official case number
+    private func syncReport(id: UUID) async throws {
+        guard let index = reports.firstIndex(where: { $0.id == id }) else { return }
+
+        // Simulate sync delay (shorter for single report)
+        try await Task.sleep(nanoseconds: 300_000_000)
+
+        if reports[index].syncStatus == .local {
+            reports[index].syncStatus = .synced
+            if reports[index].officialCaseNumber == nil {
+                reports[index].officialCaseNumber = generateOfficialCaseNumber()
+            }
+        }
     }
 
     func deleteReport(id: UUID) async throws {

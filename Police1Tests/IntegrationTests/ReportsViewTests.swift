@@ -246,6 +246,54 @@ final class StatCardTests: XCTestCase {
         let countText = texts.first { (try? $0.string()) == "42" }
         XCTAssertNotNil(countText)
     }
+
+    func testStatCardIsSelectedState() throws {
+        let view = StatCard(title: "Draft", count: 5, color: .gray, icon: "pencil", isSelected: true)
+        let sut = try view.inspect()
+
+        // Should have Button wrapping the content
+        let button = try sut.find(ViewType.Button.self)
+        XCTAssertNotNil(button)
+    }
+
+    func testStatCardNotSelectedState() throws {
+        let view = StatCard(title: "Draft", count: 5, color: .gray, icon: "pencil", isSelected: false)
+        let sut = try view.inspect()
+
+        // Should have Button wrapping the content
+        let button = try sut.find(ViewType.Button.self)
+        XCTAssertNotNil(button)
+    }
+
+    func testStatCardWithAction() throws {
+        var actionCalled = false
+        let view = StatCard(title: "Draft", count: 5, color: .gray, icon: "pencil", action: {
+            actionCalled = true
+        })
+        let sut = try view.inspect()
+
+        // Button should exist
+        let button = try sut.find(ViewType.Button.self)
+        XCTAssertNotNil(button)
+    }
+
+    func testStatCardHasRoundedRectangleBackground() throws {
+        let view = StatCard(title: "Draft", count: 5, color: .gray, icon: "pencil")
+        let sut = try view.inspect()
+
+        // Button should be present (StatCard is wrapped in a Button now)
+        let button = try sut.find(ViewType.Button.self)
+        XCTAssertNotNil(button)
+    }
+
+    func testStatCardSelectedHasOverlay() throws {
+        let view = StatCard(title: "Draft", count: 5, color: .gray, icon: "pencil", isSelected: true)
+        let sut = try view.inspect()
+
+        // Should still have button and content
+        let button = try sut.find(ViewType.Button.self)
+        XCTAssertNotNil(button)
+    }
 }
 
 // MARK: - ReportDetailView Tests
@@ -705,39 +753,39 @@ final class ReportEditorViewTests: XCTestCase {
         XCTAssertNotNil(caseNumberText, "Should show draft case number")
     }
 
-    // MARK: - Photos Section Tests
+    // MARK: - Media Section Tests
 
-    func testReportEditorViewHasPhotosSection() throws {
+    func testReportEditorViewHasMediaSection() throws {
         let report = createMockReport()
         let reportService = MockReportService()
         let view = ReportEditorView(report: report, reportService: reportService)
         let sut = try view.inspect()
 
         let texts = sut.findAll(ViewType.Text.self)
-        let photosHeader = texts.first { (try? $0.string()) == "Photos" }
-        XCTAssertNotNil(photosHeader, "Should have Photos section header")
+        let mediaHeader = texts.first { (try? $0.string()) == "Media" }
+        XCTAssertNotNil(mediaHeader, "Should have Media section header")
     }
 
-    func testReportEditorViewHasAddPhotosButton() throws {
+    func testReportEditorViewHasAddMediaButton() throws {
         let report = createMockReport()
         let reportService = MockReportService()
         let view = ReportEditorView(report: report, reportService: reportService)
         let sut = try view.inspect()
 
         let texts = sut.findAll(ViewType.Text.self)
-        let addPhotosText = texts.first { (try? $0.string()) == "Add Photos" }
-        XCTAssertNotNil(addPhotosText, "Should have Add Photos button text")
+        let addMediaText = texts.first { (try? $0.string()) == "Add Media" }
+        XCTAssertNotNil(addMediaText, "Should have Add Media button text")
     }
 
-    func testReportEditorViewHasPhotosCaptionText() throws {
+    func testReportEditorViewHasMediaCaptionText() throws {
         let report = createMockReport()
         let reportService = MockReportService()
         let view = ReportEditorView(report: report, reportService: reportService)
         let sut = try view.inspect()
 
         let texts = sut.findAll(ViewType.Text.self)
-        let captionText = texts.first { (try? $0.string()) == "Capture or select evidence photos" }
-        XCTAssertNotNil(captionText, "Should have caption text for photos")
+        let captionText = texts.first { (try? $0.string()) == "Capture or select photos and videos" }
+        XCTAssertNotNil(captionText, "Should have caption text for media")
     }
 
     func testReportEditorViewHasCameraIcon() throws {

@@ -551,6 +551,106 @@ final class PhotoStorageServiceTests: XCTestCase {
         let image = service.loadImage(fileName: "nonexistent.jpg")
         XCTAssertNil(image)
     }
+
+    func testVideoURLReturnsNilForNonExistentVideo() {
+        let service = PhotoStorageService.shared
+        let url = service.videoURL(fileName: "nonexistent.mp4")
+        XCTAssertNil(url)
+    }
+
+    func testDeleteVideoRemovesFile() {
+        let service = PhotoStorageService.shared
+        let image = UIImage(systemName: "photo")!
+
+        // Save a photo first (we'll treat it as a video for deletion test)
+        guard let savedPhoto = service.savePhoto(image, metadata: nil) else {
+            XCTFail("Failed to save photo")
+            return
+        }
+
+        // Delete using deleteMedia
+        service.deleteMedia(savedPhoto)
+
+        let loadedImage = service.loadImage(fileName: savedPhoto.fileName)
+        XCTAssertNil(loadedImage)
+    }
+
+    func testDeleteMediaForPhoto() {
+        let service = PhotoStorageService.shared
+        let image = UIImage(systemName: "photo")!
+
+        guard let savedPhoto = service.savePhoto(image, metadata: nil) else {
+            XCTFail("Failed to save photo")
+            return
+        }
+
+        service.deleteMedia(savedPhoto)
+
+        let loadedImage = service.loadImage(fileName: savedPhoto.fileName)
+        XCTAssertNil(loadedImage)
+    }
+
+    func testSavePhotoReturnsPhotoMediaType() {
+        let service = PhotoStorageService.shared
+        let image = UIImage(systemName: "photo")!
+
+        guard let savedPhoto = service.savePhoto(image, metadata: nil) else {
+            XCTFail("Failed to save photo")
+            return
+        }
+
+        XCTAssertEqual(savedPhoto.mediaType, .photo)
+        XCTAssertFalse(savedPhoto.isVideo)
+        XCTAssertTrue(savedPhoto.isPhoto)
+
+        // Cleanup
+        service.deletePhoto(fileName: savedPhoto.fileName)
+    }
+
+    func testSavePhotoWithMetadata() {
+        let service = PhotoStorageService.shared
+        let image = UIImage(systemName: "photo")!
+        let metadata = PhotoMetadata(
+            capturedAt: Date(),
+            latitude: 37.7749,
+            longitude: -122.4194,
+            altitude: 100.0
+        )
+
+        guard let savedPhoto = service.savePhoto(image, metadata: metadata) else {
+            XCTFail("Failed to save photo")
+            return
+        }
+
+        XCTAssertNotNil(savedPhoto.metadata)
+        XCTAssertEqual(savedPhoto.metadata?.latitude, 37.7749)
+        XCTAssertEqual(savedPhoto.metadata?.longitude, -122.4194)
+
+        // Cleanup
+        service.deletePhoto(fileName: savedPhoto.fileName)
+    }
+
+    func testClearAllPhotosRemovesAllFiles() {
+        let service = PhotoStorageService.shared
+        let image = UIImage(systemName: "photo")!
+
+        // Save some photos
+        var savedPhotos: [EvidencePhoto] = []
+        for _ in 0..<3 {
+            if let photo = service.savePhoto(image, metadata: nil) {
+                savedPhotos.append(photo)
+            }
+        }
+
+        // Clear all
+        service.clearAllPhotos()
+
+        // Verify all are deleted
+        for photo in savedPhotos {
+            let loadedImage = service.loadImage(fileName: photo.fileName)
+            XCTAssertNil(loadedImage)
+        }
+    }
 }
 
 // MARK: - EvidencePhotoThumbnail Tests
@@ -610,6 +710,67 @@ final class EvidenceItemPhotoTests: XCTestCase {
         let photo = EvidencePhoto(fileName: "test.jpg", capturedAt: Date(), metadata: nil)
         let item = EvidenceItem(photoUrls: ["http://example.com/photo.jpg"], photos: [photo])
         XCTAssertEqual(item.photoCount, 2)
+    }
+
+    func testEvidenceItemWithVideos() {
+        let video = EvidencePhoto(fileName: "test.mp4", capturedAt: Date(), metadata: nil, mediaType: .video)
+        let item = EvidenceItem(photos: [video])
+        XCTAssertTrue(item.hasPhotos)
+        XCTAssertEqual(item.photoCount, 1)
+    }
+
+    func testEvidenceItemWithMixedMedia() {
+        let photo = EvidencePhoto(fileName: "test.jpg", capturedAt: Date(), metadata: nil, mediaType: .photo)
+        let video = EvidencePhoto(fileName: "test.mp4", capturedAt: Date(), metadata: nil, mediaType: .video)
+        let item = EvidenceItem(photos: [photo, video])
+        XCTAssertEqual(item.photoCount, 2)
+    }
+}
+
+// MARK: - VideoPlayerView Tests
+
+@MainActor
+final class VideoPlayerViewTests: XCTestCase {
+
+    func testVideoPlayerViewWithInvalidMedia() throws {
+        let media = EvidencePhoto(fileName: "nonexistent.mp4", capturedAt: Date(), metadata: nil, mediaType: .video)
+        let view = VideoPlayerView(media: media)
+        let sut = try view.inspect()
+
+        // Should render without crashing
+        XCTAssertNotNil(sut)
+    }
+}
+
+// MARK: - VideoCameraView Tests
+
+final class VideoCameraViewTests: XCTestCase {
+
+    func testVideoCameraViewCoordinatorExists() {
+        var capturedURL: URL?
+        let view = VideoCameraView { url, _ in
+            capturedURL = url
+        }
+
+        let coordinator = view.makeCoordinator()
+        XCTAssertNotNil(coordinator)
+        XCTAssertNil(capturedURL) // Not called yet
+    }
+}
+
+// MARK: - CameraView Tests
+
+final class CameraViewTests: XCTestCase {
+
+    func testCameraViewCoordinatorExists() {
+        var capturedImage: UIImage?
+        let view = CameraView { image, _ in
+            capturedImage = image
+        }
+
+        let coordinator = view.makeCoordinator()
+        XCTAssertNotNil(coordinator)
+        XCTAssertNil(capturedImage) // Not called yet
     }
 }
 
@@ -720,3 +881,4 @@ extension MediaMetadataBar: @retroactive Inspectable {}
 extension EvidencePhotoThumbnail: @retroactive Inspectable {}
 extension EvidenceMediaView: @retroactive Inspectable {}
 extension MediaGalleryItem: @retroactive Inspectable {}
+extension VideoPlayerView: @retroactive Inspectable {}
