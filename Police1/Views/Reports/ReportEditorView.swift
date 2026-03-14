@@ -10,8 +10,10 @@ struct ReportEditorView: View {
     @State private var isSaving = false
     @State private var showingPersonPicker: PersonPickerType?
     @State private var showingEvidencePicker = false
+    @State private var showingPhotoPicker = false
     @State private var showingDiscardAlert = false
     @State private var hasChanges = false
+    @State private var capturedPhotos: [CapturedPhoto] = []
 
     private let isNewReport: Bool
 
@@ -32,6 +34,9 @@ struct ReportEditorView: View {
 
                 // Narrative Section
                 narrativeSection
+
+                // Photos Section
+                photosSection
 
                 // Involved Parties Section
                 partiesSection
@@ -81,6 +86,12 @@ struct ReportEditorView: View {
             .sheet(isPresented: $showingEvidencePicker) {
                 EvidenceEditorView { evidence in
                     report.evidence.append(evidence)
+                    hasChanges = true
+                }
+            }
+            .sheet(isPresented: $showingPhotoPicker) {
+                PhotoCaptureView { photo in
+                    capturedPhotos.append(photo)
                     hasChanges = true
                 }
             }
@@ -210,6 +221,81 @@ struct ReportEditorView: View {
                     Label("Witnesses", systemImage: "person.fill")
                     Spacer()
                     Text("\(report.witnesses.count)")
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
+    // MARK: - Photos Section
+
+    private var photosSection: some View {
+        Section {
+            if capturedPhotos.isEmpty {
+                Button(action: { showingPhotoPicker = true }) {
+                    HStack(spacing: 12) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.blue.opacity(0.15))
+                                .frame(width: 44, height: 44)
+                            Image(systemName: "camera.fill")
+                                .font(.title3)
+                                .foregroundStyle(.blue)
+                        }
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Add Photos")
+                                .font(.body.weight(.medium))
+                            Text("Capture or select evidence photos")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Spacer()
+
+                        Image(systemName: "chevron.right")
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+                .buttonStyle(.plain)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(capturedPhotos) { photo in
+                            PhotoThumbnail(photo: photo) {
+                                capturedPhotos.removeAll { $0.id == photo.id }
+                                hasChanges = true
+                            }
+                        }
+
+                        // Add more button
+                        Button(action: { showingPhotoPicker = true }) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color(.secondarySystemBackground))
+                                    .frame(width: 100, height: 100)
+                                VStack(spacing: 4) {
+                                    Image(systemName: "plus.circle.fill")
+                                        .font(.title2)
+                                        .foregroundStyle(.blue)
+                                    Text("Add")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
+            }
+        } header: {
+            HStack {
+                Text("Photos")
+                Spacer()
+                if !capturedPhotos.isEmpty {
+                    Text("\(capturedPhotos.count) photo\(capturedPhotos.count == 1 ? "" : "s")")
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }

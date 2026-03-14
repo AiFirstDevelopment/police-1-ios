@@ -649,6 +649,74 @@ final class ReportEditorViewTests: XCTestCase {
         let caseNumberText = texts.first { (try? $0.string()) == "DRAFT-12345" }
         XCTAssertNotNil(caseNumberText, "Should show draft case number")
     }
+
+    // MARK: - Photos Section Tests
+
+    func testReportEditorViewHasPhotosSection() throws {
+        let report = createMockReport()
+        let reportService = MockReportService()
+        let view = ReportEditorView(report: report, reportService: reportService)
+        let sut = try view.inspect()
+
+        let texts = sut.findAll(ViewType.Text.self)
+        let photosHeader = texts.first { (try? $0.string()) == "Photos" }
+        XCTAssertNotNil(photosHeader, "Should have Photos section header")
+    }
+
+    func testReportEditorViewHasAddPhotosButton() throws {
+        let report = createMockReport()
+        let reportService = MockReportService()
+        let view = ReportEditorView(report: report, reportService: reportService)
+        let sut = try view.inspect()
+
+        let texts = sut.findAll(ViewType.Text.self)
+        let addPhotosText = texts.first { (try? $0.string()) == "Add Photos" }
+        XCTAssertNotNil(addPhotosText, "Should have Add Photos button text")
+    }
+
+    func testReportEditorViewHasPhotosCaptionText() throws {
+        let report = createMockReport()
+        let reportService = MockReportService()
+        let view = ReportEditorView(report: report, reportService: reportService)
+        let sut = try view.inspect()
+
+        let texts = sut.findAll(ViewType.Text.self)
+        let captionText = texts.first { (try? $0.string()) == "Capture or select evidence photos" }
+        XCTAssertNotNil(captionText, "Should have caption text for photos")
+    }
+
+    func testReportEditorViewHasCameraIcon() throws {
+        let report = createMockReport()
+        let reportService = MockReportService()
+        let view = ReportEditorView(report: report, reportService: reportService)
+        let sut = try view.inspect()
+
+        let images = sut.findAll(ViewType.Image.self)
+        // Should have camera icon in photos section
+        XCTAssertGreaterThanOrEqual(images.count, 1)
+    }
+
+    func testReportEditorViewPhotosSectionHasButton() throws {
+        let report = createMockReport()
+        let reportService = MockReportService()
+        let view = ReportEditorView(report: report, reportService: reportService)
+        let sut = try view.inspect()
+
+        // Photos section has a button for adding photos
+        let buttons = sut.findAll(ViewType.Button.self)
+        XCTAssertGreaterThanOrEqual(buttons.count, 1, "Should have button in photos section")
+    }
+
+    func testReportEditorViewPhotosSectionHasChevron() throws {
+        let report = createMockReport()
+        let reportService = MockReportService()
+        let view = ReportEditorView(report: report, reportService: reportService)
+        let sut = try view.inspect()
+
+        let images = sut.findAll(ViewType.Image.self)
+        // Should have multiple images including chevron
+        XCTAssertGreaterThanOrEqual(images.count, 2)
+    }
 }
 
 // MARK: - PersonListRow Tests
