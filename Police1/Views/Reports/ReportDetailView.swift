@@ -2,12 +2,30 @@ import SwiftUI
 
 // MARK: - Report Detail View
 
+enum ReportDetailSheet: Identifiable {
+    case editor
+    case share(Data)
+
+    var id: String {
+        switch self {
+        case .editor: return "editor"
+        case .share: return "share"
+        }
+    }
+}
+
 struct ReportDetailView: View {
-    let report: Report
+    @State private var report: Report
     let reportService: MockReportService
 
-    @State private var showingEditor = false
+    @State private var activeSheet: ReportDetailSheet?
+    @State private var showingSubmitAlert = false
     @Environment(\.dismiss) private var dismiss
+
+    init(report: Report, reportService: MockReportService) {
+        self._report = State(initialValue: report)
+        self.reportService = reportService
+    }
 
     var body: some View {
         ScrollView {
@@ -46,21 +64,33 @@ struct ReportDetailView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    Button(action: { showingEditor = true }) {
+                    Button {
+                        activeSheet = .editor
+                    } label: {
                         Label("Edit Report", systemImage: "pencil")
                     }
 
-                    Button(action: exportPDF) {
+                    Button {
+                        if let data = generatePDF() {
+                            activeSheet = .share(data)
+                        }
+                    } label: {
                         Label("Export PDF", systemImage: "arrow.down.doc")
                     }
 
-                    Button(action: shareReport) {
+                    Button {
+                        if let data = generatePDF() {
+                            activeSheet = .share(data)
+                        }
+                    } label: {
                         Label("Share", systemImage: "square.and.arrow.up")
                     }
 
                     if report.status == .draft {
                         Divider()
-                        Button(action: submitReport) {
+                        Button {
+                            showingSubmitAlert = true
+                        } label: {
                             Label("Submit for Review", systemImage: "paperplane")
                         }
                     }
@@ -69,8 +99,19 @@ struct ReportDetailView: View {
                 }
             }
         }
-        .sheet(isPresented: $showingEditor) {
-            ReportEditorView(report: report, reportService: reportService)
+        .sheet(item: $activeSheet) { sheet in
+            switch sheet {
+            case .editor:
+                ReportEditorView(report: report, reportService: reportService)
+            case .share(let data):
+                ShareSheet(items: [data])
+            }
+        }
+        .alert("Submit for Review", isPresented: $showingSubmitAlert) {
+            Button("Submit", role: .none) { performSubmit() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This report will be sent to your supervisor for review. You can still make edits until it's approved.")
         }
     }
 
@@ -281,16 +322,99 @@ struct ReportDetailView: View {
 
     // MARK: - Actions
 
-    private func exportPDF() {
-        // TODO: Implement PDF export
+    private func performSubmit() {
+        Task {
+            var updatedReport = report
+            updatedReport.status = .pending
+            if let saved = try? await reportService.saveReport(updatedReport) {
+                report = saved
+            }
+        }
     }
 
-    private func shareReport() {
-        // TODO: Implement share
-    }
+    private func generatePDF() -> Data? {
+        let pageWidth: CGFloat = 612
+        let pageHeight: CGFloat = 792
+        let margin: CGFloat = 50
 
-    private func submitReport() {
-        // TODO: Implement submit for review
+        let pdfRenderer = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: pageWidth, height: pageHeight))
+
+        let data = pdfRenderer.pdfData { context in
+            context.beginPage()
+
+            var yPosition: CGFloat = margin
+
+            // Title
+            let titleAttributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.boldSystemFont(ofSize: 24),
+                .foregroundColor: UIColor.black
+            ]
+            let title = "Police Incident Report"
+            title.draw(at: CGPoint(x: margin, y: yPosition), withAttributes: titleAttributes)
+            yPosition += 40
+
+            // Case Number
+            let headerAttributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.boldSystemFont(ofSize: 14),
+                .foregroundColor: UIColor.darkGray
+            ]
+            let bodyAttributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.systemFont(ofSize: 12),
+                .foregroundColor: UIColor.black
+            ]
+
+            "Case Number: \(report.displayCaseNumber)".draw(at: CGPoint(x: margin, y: yPosition), withAttributes: headerAttributes)
+            yPosition += 25
+
+            // Incident Type
+            "Incident Type: \(report.incidentType.rawValue)".draw(at: CGPoint(x: margin, y: yPosition), withAttributes: bodyAttributes)
+            yPosition += 20
+
+            // Status
+            "Status: \(report.status.rawValue)".draw(at: CGPoint(x: margin, y: yPosition), withAttributes: bodyAttributes)
+            yPosition += 20
+
+            // Date
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateStyle = .long
+            dateFormatter.timeStyle = .short
+            "Date: \(dateFormatter.string(from: report.incidentDate))".draw(at: CGPoint(x: margin, y: yPosition), withAttributes: bodyAttributes)
+            yPosition += 20
+
+            // Location
+            "Location: \(report.location)".draw(at: CGPoint(x: margin, y: yPosition), withAttributes: bodyAttributes)
+            yPosition += 30
+
+            // Summary
+            if !report.summary.isEmpty {
+                "Summary:".draw(at: CGPoint(x: margin, y: yPosition), withAttributes: headerAttributes)
+                yPosition += 20
+                let summaryRect = CGRect(x: margin, y: yPosition, width: pageWidth - (margin * 2), height: 60)
+                report.summary.draw(in: summaryRect, withAttributes: bodyAttributes)
+                yPosition += 70
+            }
+
+            // Narrative
+            if !report.narrative.isEmpty {
+                "Narrative:".draw(at: CGPoint(x: margin, y: yPosition), withAttributes: headerAttributes)
+                yPosition += 20
+                let narrativeRect = CGRect(x: margin, y: yPosition, width: pageWidth - (margin * 2), height: 300)
+                report.narrative.draw(in: narrativeRect, withAttributes: bodyAttributes)
+                yPosition += 310
+            }
+
+            // Officer Info
+            yPosition = pageHeight - 100
+            "Reporting Officer: \(report.officerName)".draw(at: CGPoint(x: margin, y: yPosition), withAttributes: bodyAttributes)
+            yPosition += 20
+            "Badge Number: \(report.badgeNumber)".draw(at: CGPoint(x: margin, y: yPosition), withAttributes: bodyAttributes)
+            yPosition += 20
+
+            let generatedDate = "Generated: \(dateFormatter.string(from: Date()))"
+            generatedDate.draw(at: CGPoint(x: margin, y: yPosition), withAttributes: bodyAttributes)
+        }
+
+        return data
     }
 }
 
@@ -462,6 +586,19 @@ struct EvidencePhotoView: View {
             PhotoDetailView(photo: photo)
         }
     }
+}
+
+// MARK: - Share Sheet
+
+struct ShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        let controller = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        return controller
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 // MARK: - Preview

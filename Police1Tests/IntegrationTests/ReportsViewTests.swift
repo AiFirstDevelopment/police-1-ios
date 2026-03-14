@@ -351,6 +351,61 @@ final class ReportDetailViewTests: XCTestCase {
     }
 }
 
+// MARK: - ReportDetailSheet Tests
+
+@MainActor
+final class ReportDetailSheetTests: XCTestCase {
+
+    func testEditorSheetId() {
+        let sheet = ReportDetailSheet.editor
+        XCTAssertEqual(sheet.id, "editor")
+    }
+
+    func testShareSheetId() {
+        let data = Data()
+        let sheet = ReportDetailSheet.share(data)
+        XCTAssertEqual(sheet.id, "share")
+    }
+
+    func testShareSheetContainsData() {
+        let testData = "test".data(using: .utf8)!
+        let sheet = ReportDetailSheet.share(testData)
+
+        if case .share(let data) = sheet {
+            XCTAssertEqual(data, testData)
+        } else {
+            XCTFail("Expected share case")
+        }
+    }
+}
+
+// MARK: - ShareSheet Tests
+
+@MainActor
+final class ShareSheetTests: XCTestCase {
+
+    func testShareSheetInitializesWithItems() {
+        let data = "Test PDF content".data(using: .utf8)!
+        let shareSheet = ShareSheet(items: [data])
+
+        XCTAssertEqual(shareSheet.items.count, 1)
+    }
+
+    func testShareSheetAcceptsMultipleItems() {
+        let data1 = "Item 1".data(using: .utf8)!
+        let data2 = "Item 2".data(using: .utf8)!
+        let shareSheet = ShareSheet(items: [data1, data2])
+
+        XCTAssertEqual(shareSheet.items.count, 2)
+    }
+
+    func testShareSheetAcceptsStringItems() {
+        let shareSheet = ShareSheet(items: ["Test string", "Another string"])
+
+        XCTAssertEqual(shareSheet.items.count, 2)
+    }
+}
+
 // MARK: - InfoRow Tests
 
 @MainActor
